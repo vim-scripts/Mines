@@ -1,7 +1,8 @@
 " Mines.vim: emulates a minefield
 "   Author:		Charles E. Campbell, Jr.
-"   Date:		Jul 05, 2004
-"   Version:	10
+"   Date:		Aug 27, 2004
+"   Version:	11
+" GetLatestVimScripts: 551 1 :AutoInstall: Mines.vim
 " ---------------------------------------------------------------------
 "  Single Loading Only: {{{1
 if &cp || exists("g:loaded_minefield")
@@ -288,6 +289,8 @@ fun! <SID>DrawMinefield()
   " first test: insure that the mouseclick is inside the playing area
   if 1 <= rowm1 && rowm1 <= s:MFrows && 1 <= colm1 && colm1 <= s:MFcols
    if " ".s:MF_{rowm1}_{colm1} == ' *'
+   	" mark the location where the bomb went off
+   	let s:MF_{rowm1}_{colm1}= 'X'
     call s:Boom()
    else
     call s:ShowAt(rowm1,colm1)
@@ -340,6 +343,11 @@ fun! <SID>DrawMineflag()
    if " ".s:MF_{frow}_{fcol} == ' *'
 	let s:bombsflagged= s:bombsflagged - 1
    endif
+"   call Dret("DrawMineflag")
+   return
+  endif
+  if @@ =~ '\d' || @@ == ' '
+   " don't change numbered entries or no-bomb areas
 "   call Dret("DrawMineflag")
    return
   endif
@@ -518,7 +526,7 @@ fun! <SID>MFSyntax()
   syn match Minefield8		"8"
   syn match MinefieldTab	"	"
   syn match MinefieldSpace	" "
-  syn match MinefieldBomb	'\*'
+  syn match MinefieldBomb	'[*X]'
   syn region MinefieldText	matchgroup=MinefieldBg start="\s\+\zeTime"		end="$"
   syn region MinefieldText	matchgroup=MinefieldBg start="\s\+\zeBombs"		end="$"
   syn region MinefieldText	matchgroup=MinefieldBg start="\s\+\zeFlags"		end="$"
@@ -533,41 +541,41 @@ fun! <SID>MFSyntax()
   syn region MinefieldTitle	matchgroup=MinefieldBg start="\s\+\zeM I N E S\>"	end="$"
   syn region MinefieldTitle	matchgroup=MinefieldBg start="\s\+\zeby Charles"	end="$"
   if &bg == "dark"
-   hi Minefield0		term=NONE cterm=NONE gui=NONE ctermfg=black   guifg=black    ctermbg=black   guibg=black
-   hi Minefield1		term=NONE cterm=NONE gui=NONE ctermfg=green   guifg=green    ctermbg=black   guibg=black
-   hi Minefield2		term=NONE cterm=NONE gui=NONE ctermfg=yellow  guifg=yellow   ctermbg=black   guibg=black
-   hi Minefield3		term=NONE cterm=NONE gui=NONE ctermfg=red     guifg=red      ctermbg=black   guibg=black
-   hi Minefield4		term=NONE cterm=NONE gui=NONE ctermfg=cyan    guifg=cyan     ctermbg=black   guibg=black
-   hi Minefield5		term=NONE cterm=NONE gui=NONE ctermfg=green   guifg=green    ctermbg=blue    guibg=blue
-   hi Minefield6		term=NONE cterm=NONE gui=NONE ctermfg=yellow  guifg=yellow   ctermbg=blue    guibg=blue
-   hi Minefield7		term=NONE cterm=NONE gui=NONE ctermfg=red     guifg=red	     ctermbg=blue    guibg=blue
-   hi Minefield8		term=NONE cterm=NONE gui=NONE ctermfg=cyan    guifg=cyan     ctermbg=blue    guibg=blue
-   hi MinefieldTab		term=NONE cterm=NONE gui=NONE ctermfg=blue    guifg=blue     ctermbg=blue    guibg=blue
-   hi MinefieldRim		term=NONE cterm=NONE gui=NONE ctermfg=white   guifg=white    ctermbg=white   guibg=white
-   hi MinefieldFlag		term=NONE cterm=NONE gui=NONE ctermfg=white   guifg=white    ctermbg=magenta guibg=magenta
-   hi MinefieldText		term=NONE cterm=NONE gui=NONE ctermfg=white   guifg=white    ctermbg=magenta guibg=magenta
-   hi MinefieldSpace	term=NONE cterm=NONE gui=NONE ctermfg=black   guifg=black    ctermbg=black   guibg=black
-   hi MinefieldMinnie	term=NONE cterm=NONE gui=NONE ctermfg=white   guifg=white
-   hi MinefieldBomb		term=NONE cterm=NONE gui=NONE ctermfg=white   guifg=white    ctermbg=red     guibg=red
+   hi Minefield0		 ctermfg=black   guifg=black    ctermbg=black   guibg=black    term=NONE cterm=NONE gui=NONE
+   hi Minefield1		 ctermfg=green   guifg=green    ctermbg=black   guibg=black    term=NONE cterm=NONE gui=NONE
+   hi Minefield2		 ctermfg=yellow  guifg=yellow   ctermbg=black   guibg=black    term=NONE cterm=NONE gui=NONE
+   hi Minefield3		 ctermfg=red     guifg=red      ctermbg=black   guibg=black    term=NONE cterm=NONE gui=NONE
+   hi Minefield4		 ctermfg=cyan    guifg=cyan     ctermbg=black   guibg=black    term=NONE cterm=NONE gui=NONE
+   hi Minefield5		 ctermfg=green   guifg=green    ctermbg=blue    guibg=blue     term=NONE cterm=NONE gui=NONE
+   hi Minefield6		 ctermfg=yellow  guifg=yellow   ctermbg=blue    guibg=blue     term=NONE cterm=NONE gui=NONE
+   hi Minefield7		 ctermfg=red     guifg=red	     ctermbg=blue    guibg=blue    term=NONE cterm=NONE gui=NONE
+   hi Minefield8		 ctermfg=cyan    guifg=cyan     ctermbg=blue    guibg=blue     term=NONE cterm=NONE gui=NONE
+   hi MinefieldTab		 ctermfg=blue    guifg=blue     ctermbg=blue    guibg=blue     term=NONE cterm=NONE gui=NONE
+   hi MinefieldRim		 ctermfg=white   guifg=white    ctermbg=white   guibg=white    term=NONE cterm=NONE gui=NONE
+   hi MinefieldFlag		 ctermfg=white   guifg=white    ctermbg=magenta guibg=magenta  term=NONE cterm=NONE gui=NONE
+   hi MinefieldText		 ctermfg=white   guifg=white    ctermbg=magenta guibg=magenta  term=NONE cterm=NONE gui=NONE
+   hi MinefieldSpace	 ctermfg=black   guifg=black    ctermbg=black   guibg=black    term=NONE cterm=NONE gui=NONE
+   hi MinefieldMinnie	 ctermfg=white   guifg=white                                   term=NONE cterm=NONE gui=NONE
+   hi MinefieldBomb		 ctermfg=white   guifg=white    ctermbg=red     guibg=red      term=NONE cterm=NONE gui=NONE
    hi link MinefieldWinner MinefieldText
   else
-   hi Minefield0		term=NONE cterm=NONE gui=NONE ctermfg=black   guifg=black    ctermbg=black   guibg=black
-   hi Minefield1		term=NONE cterm=NONE gui=NONE ctermfg=green   guifg=green    ctermbg=black   guibg=black
-   hi Minefield2		term=NONE cterm=NONE gui=NONE ctermfg=yellow  guifg=yellow   ctermbg=black   guibg=black
-   hi Minefield3		term=NONE cterm=NONE gui=NONE ctermfg=red     guifg=red      ctermbg=black   guibg=black
-   hi Minefield4		term=NONE cterm=NONE gui=NONE ctermfg=cyan    guifg=cyan     ctermbg=black   guibg=black
-   hi Minefield5		term=NONE cterm=NONE gui=NONE ctermfg=green   guifg=green    ctermbg=blue    guibg=blue
-   hi Minefield6		term=NONE cterm=NONE gui=NONE ctermfg=yellow  guifg=yellow   ctermbg=blue    guibg=blue
-   hi Minefield7		term=NONE cterm=NONE gui=NONE ctermfg=red     guifg=red	     ctermbg=blue    guibg=blue
-   hi Minefield8		term=NONE cterm=NONE gui=NONE ctermfg=cyan    guifg=cyan     ctermbg=blue    guibg=blue
-   hi MinefieldTab		term=NONE cterm=NONE gui=NONE ctermfg=blue    guifg=blue     ctermbg=blue    guibg=blue
-   hi MinefieldRim		term=NONE cterm=NONE gui=NONE ctermfg=magenta  guifg=magenta   ctermbg=magenta  guibg=magenta
-   hi MinefieldFlag		term=NONE cterm=NONE gui=NONE ctermfg=white   guifg=white    ctermbg=magenta guibg=magenta
-   hi MinefieldText		term=NONE cterm=NONE gui=NONE ctermfg=black   guifg=black    ctermbg=cyan    guibg=cyan
-   hi MinefieldSpace	term=NONE cterm=NONE gui=NONE ctermfg=black   guifg=black    ctermbg=black   guibg=black
-   hi MinefieldMinnie	term=NONE cterm=NONE gui=NONE ctermfg=black   guifg=black
-   hi MinefieldBomb		term=NONE cterm=NONE gui=NONE ctermfg=white   guifg=white    ctermbg=red     guibg=red
-   hi Cursor			term=NONE cterm=NONE gui=NONE ctermfg=blue guifg=blue ctermbg=white guibg=white
+   hi Minefield0		 ctermfg=black   guifg=black    ctermbg=black   guibg=black     term=NONE cterm=NONE gui=NONE
+   hi Minefield1		 ctermfg=green   guifg=green    ctermbg=black   guibg=black     term=NONE cterm=NONE gui=NONE
+   hi Minefield2		 ctermfg=yellow  guifg=yellow   ctermbg=black   guibg=black     term=NONE cterm=NONE gui=NONE
+   hi Minefield3		 ctermfg=red     guifg=red      ctermbg=black   guibg=black     term=NONE cterm=NONE gui=NONE
+   hi Minefield4		 ctermfg=cyan    guifg=cyan     ctermbg=black   guibg=black     term=NONE cterm=NONE gui=NONE
+   hi Minefield5		 ctermfg=green   guifg=green    ctermbg=blue    guibg=blue      term=NONE cterm=NONE gui=NONE
+   hi Minefield6		 ctermfg=yellow  guifg=yellow   ctermbg=blue    guibg=blue      term=NONE cterm=NONE gui=NONE
+   hi Minefield7		 ctermfg=red     guifg=red	    ctermbg=blue    guibg=blue      term=NONE cterm=NONE gui=NONE
+   hi Minefield8		 ctermfg=cyan    guifg=cyan     ctermbg=blue    guibg=blue      term=NONE cterm=NONE gui=NONE
+   hi MinefieldTab		 ctermfg=blue    guifg=blue     ctermbg=blue    guibg=blue      term=NONE cterm=NONE gui=NONE
+   hi MinefieldRim		 ctermfg=magenta guifg=magenta  ctermbg=magenta guibg=magenta   term=NONE cterm=NONE gui=NONE
+   hi MinefieldFlag		 ctermfg=white   guifg=white    ctermbg=magenta guibg=magenta   term=NONE cterm=NONE gui=NONE
+   hi MinefieldText		 ctermfg=black   guifg=black    ctermbg=cyan    guibg=cyan      term=NONE cterm=NONE gui=NONE
+   hi MinefieldSpace	 ctermfg=black   guifg=black    ctermbg=black   guibg=black     term=NONE cterm=NONE gui=NONE
+   hi MinefieldMinnie	 ctermfg=black   guifg=black                                    term=NONE cterm=NONE gui=NONE
+   hi MinefieldBomb		 ctermfg=white   guifg=white    ctermbg=red     guibg=red       term=NONE cterm=NONE gui=NONE
+   hi Cursor			 ctermfg=blue guifg=blue ctermbg=white guibg=white              term=NONE cterm=NONE gui=NONE
    hi link MinefieldWinner MinefieldText
   endif
   hi link MinefieldTitle  PreProc
@@ -1216,7 +1224,7 @@ fun! <SID>SaveMap(mapmode,maplead,mapchx)
 	 let amap=a:maplead.strpart(a:mapchx,i-1,1)
 	 if maparg(amap,a:mapmode) != ""
 	  let s:restoremap= a:mapmode."map ".amap." ".maparg(amap,a:mapmode)."|".s:restoremap
-	  exe a:mapmode."unmap ".amap
+	  exe "silent! ".a:mapmode."unmap ".amap
 	 endif
 	 let i= i + 1
 	endwhile
@@ -1352,6 +1360,12 @@ what you think is a mine.
 =============================================================================
 2. History:						*mines-history*
 
+   11 : 08/02/04 : * an X will now mark the bomb that went off
+                   * bugfix: an "f" on a previously determined site
+		     (whether numbered or blank) will now have no effect
+		   * flipped the cterm=NONE and fg/bg specs about; some
+		     machines were showing all bold which equated to one
+		     color.
    10 : 07/28/04 : * updatetime now 200ms, affects time-left display when
                      g:mines_timer is true.  Restored after game finished.
                    * longest winning/losing streaks now computed&displayed
