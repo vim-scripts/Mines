@@ -1,0 +1,54 @@
+This is a mirror of http://www.vim.org/scripts/script.php?script_id=551
+
+Mines is a Vim plugin, but you can also source it in.  Mines includes cecutil.vim and Rndm.vim (for screen restoration and for pseudo-random number generation).  The latest developments in Mines.vim will always be available at
+
+    http://mysite.verizon.net/astronaut/vim/index.html#MINES
+
+    Games:
+        \mfe : play an easy mines game
+        \mfm : play a  medium-difficulty mines game
+        \mfh : play a  high-difficulty mines game
+        \mfr : restore a game
+
+Note that using the \mf_ maps above will save the files showing in all windows and save your session.  Although I've used the backslash in the maps as shown here, actually they use <Leader> so you may customize your maps using mapleader as you wish.
+
+Mines.vim is a use-at-your-own-risk game.  However, an effort has been made to preserve your files.  The game does a "windo w" and uses mksession to both save your working files that are showing in your windows and to preserve your window layout for subsequent restoration.
+
+On many terminals, all you need to do is to click with the left mouse (to see what's there, or maybe to go BOOM!) or to click with the rightmouse to flag what you think is a mine.
+
+    More Maps:
+
+     -Play-
+        x   move the cursor around the field;
+            pressing x is just like pressing a
+            <leftmouse> -- find out what's
+            hidden!
+
+        f   just like the <rightmouse>, flag
+            what's under the cursor as a mine
+
+     -Control-
+        s   suspend the game, restore the display
+            and session  (\mfr will subsequently
+            restore the game)
+
+        q   quit the game, restore the display
+
+     -New Games-
+        E   starts up a new easy game 
+            (only while an old game is showing)
+
+        M   starts up a new medium game
+            (only while an old game is showing)
+
+        H   starts up a new hard game
+            (only while an old game is showing)
+
+The objective of the game is to flag all mines and to reveal all safe squares.  As soon as you click a <leftmouse> or x, the square under the cursor is revealed with either a count of the number of bombs around it or as a BOOM.
+
+If you win Minnie will do a cartwheel for you!
+
+Sigh -- there appears to be a problem with Sun Solarus dtterms -- Mines highlights several characters with the same foreground and background colors, and this action appears to turn the cursor off on dtterms.  I'm afraid I don't know how to work around this; does anyone know how to turn the cursor back on???
+
+Thank you for rating Mines.vim -- good luck!
+
