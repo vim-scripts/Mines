@@ -1,7 +1,7 @@
 " Mines.vim: emulates a minefield
 "   Author:		Charles E. Campbell, Jr.
-"   Date:		Jun 28, 2004
-"   Version:	9
+"   Date:		Jul 05, 2004
+"   Version:	10
 " ---------------------------------------------------------------------
 "  Single Loading Only: {{{1
 if &cp || exists("g:loaded_minefield")
@@ -50,44 +50,53 @@ if !hasmapto('<Plug>ToggleMineTimer')
 endif
 nmap <silent> <script> <Plug>ToggleMineTimer	:set lz<CR>:let g:mines_timer= !g:mines_timer<CR>:set nolz<CR>
 
-if !hasmapto('<Plug>WriteStatistics')
- nmap <unique> <Leader>mfc  <Plug>WriteStatistics
+if !hasmapto('<Plug>SaveStatistics')
+ nmap <unique> <Leader>mfc  <Plug>SaveStatistics
 endif
-nmap <silent> <script> <Plug>WriteStatistics	:set lz<CR>:call <SID>WriteStatistics(0)<CR>:set nolz<CR>
+nmap <silent> <script> <Plug>SaveStatistics	:set lz<CR>:call <SID>SaveStatistics(0)<CR>:set nolz<CR>
 
 " ---------------------------------------------------------------------
 " Functions: {{{1
 " EasyMines: {{{2
 "    Requires an 12x12 grid be displayable
 fun! <SID>EasyMines()
+"  let g:decho_hide= 1  "Decho
+"  call Dfunc("EasyMines()")
   let s:field = "E"
   let m1      = g:rndm_m1 + (localtime()%100 - 50)
   let m2      = g:rndm_m2 + (localtime()/86400)%100
   let m3      = g:rndm_m3 + (localtime()/3600)%100
   call RndmInit(m1,m2,m3)
   call MineFieldSettings(10,10,15*10*10/100,120)
+"  call Dret("EasyMines")
 endfun
 
 " MedMines: {{{2
 "    Requires a 24x24 grid be displayable
 fun! <SID>MedMines()
+"  let g:decho_hide= 1  "Decho
+"  call Dfunc("MedMines()")
   let s:field = "M"
   let m1      = g:rndm_m1 + (localtime()%100 - 50)
   let m2      = g:rndm_m2 + (localtime()/86400)%100
   let m3      = g:rndm_m3 + (localtime()/3600)%100
   call RndmInit(m1,m2,m3)
   call MineFieldSettings(22,22,20*22*22/100,240)
+"  call Dret("MedMines")
 endfun
 
 " HardMines: {{{2{
 "    Requies a 50x50 grid be displayable
 fun! <SID>HardMines()
+"  let g:decho_hide= 1  "Decho
+"  call Dfunc("HardMines()")
   let s:field = "H"
   let m1      = g:rndm_m1 + (localtime()%100 - 50)
   let m2      = g:rndm_m2 + (localtime()/86400)%100
   let m3      = g:rndm_m3 + (localtime()/3600)%100
   call RndmInit(m1,m2,m3)
   call MineFieldSettings(48,48,20*48*48/100,480)
+"  call Dret("HardMines")
 endfun
 
 " ---------------------------------------------------------------------
@@ -214,6 +223,20 @@ fun! <SID>InitMines()
     au CursorHold * call s:TimeLapse()
    augroup END
   endif
+  let s:utkeep= &ut
+  set ut=100
+  augroup AuMinesTimer
+   au CursorHold * call s:MFSyntax()
+  augroup END
+
+  " title and author stuff
+  1
+  exe "norm! jA           M I N E S"
+  exe "norm! jA    by Charles E. Campbell"
+
+  " place cursor in upper left-hand corner of minefield
+  call cursor(2,2)
+
 "  call Dret("InitMines")
 endfun
 
@@ -359,7 +382,7 @@ fun! s:TimeLapse()
 	let tms= localtime() - s:timestart
 	8
     s/  Time.*$//e
-	exe "norm! A  Time used=".timeused
+	exe "norm! A  Time used=".timeused.'sec'
 	9
     s/  Time.*$//e
 	let timeleft= s:MFmaxtime - timeused
@@ -417,6 +440,9 @@ endfun
 fun! s:Boom()
 "  call Dfunc("Boom()")
 
+  " clean off right-hand side of minefield
+  %s/^:.\{-}:\zs.*$//e
+
   let curline= line(".")
   let curcol = col(".")
   echohl Error
@@ -435,13 +461,16 @@ fun! s:Boom()
   endif
   let s:timelapse= localtime() - s:timestart - s:timesuspended
   exe "norm! A  BOOM!"
-  exe "norm! jA  Time  Used   : ".s:timelapse
+  exe "norm! jA  Time  Used   : ".s:timelapse."sec"
   exe "norm! jA  Bombs Flagged: ".s:bombsflagged
   exe "norm! jA  Bombs Present: ".s:MFmines
   exe "norm! jA  Flags Used   : ".s:flagsused
   let s:timestart    = 0
   let s:timestop     = 0
   let s:timesuspended= 0
+  if exists("s:utkeep")
+   let &ut= s:utkeep
+  endif
   call s:Winners(0)
   11
   let row= 1
@@ -496,9 +525,13 @@ fun! <SID>MFSyntax()
   syn region MinefieldText	matchgroup=MinefieldBg start="\s\+\zeBOOM"		end="$"
   syn region MinefieldText	matchgroup=MinefieldBg start="\s\+\zetotal"		end="$"
   syn region MinefieldText	matchgroup=MinefieldBg start="\s\+\zestreak"	end="$"
+  syn region MinefieldText	matchgroup=MinefieldBg start="\s\+\zelongest"	end="$"
+  syn region MinefieldText	matchgroup=MinefieldBg start="\s\+\zecurrent"	end="$"
   syn region MinefieldText	matchgroup=MinefieldBg start="\s\+\zebest"		end="$"
   syn region MinefieldMinnie	matchgroup=MinefieldBg start="\s\+\ze[-,/\\)o|]"	end="$" contains=MinefieldWinner keepend
   syn region MinefieldWinner	matchgroup=MinefieldBg start="\s\+\ze\(YOU\|WON\|!!!\)" end="$" keepend
+  syn region MinefieldTitle	matchgroup=MinefieldBg start="\s\+\zeM I N E S\>"	end="$"
+  syn region MinefieldTitle	matchgroup=MinefieldBg start="\s\+\zeby Charles"	end="$"
   if &bg == "dark"
    hi Minefield0		term=NONE cterm=NONE gui=NONE ctermfg=black   guifg=black    ctermbg=black   guibg=black
    hi Minefield1		term=NONE cterm=NONE gui=NONE ctermfg=green   guifg=green    ctermbg=black   guibg=black
@@ -537,6 +570,7 @@ fun! <SID>MFSyntax()
    hi Cursor			term=NONE cterm=NONE gui=NONE ctermfg=blue guifg=blue ctermbg=white guibg=white
    hi link MinefieldWinner MinefieldText
   endif
+  hi link MinefieldTitle  PreProc
 
 "  call Dret("MFSyntax")
 endfun
@@ -602,7 +636,7 @@ fun! <SID>DisplayMines(init)
   nmap <silent> q :silent call <SID>StopMines(0)<CR>
   nmap <silent> s :silent call <SID>StopMines(1)<CR>
   nmap <silent> f :silent call <SID>DrawMineflag()<CR>
-  nmap <silent> C :set lz<CR>:call <SID>WriteStatistics(0)<CR>:set nolz<CR>
+  nmap <silent> C :set lz<CR>:call <SID>SaveStatistics(0)<CR>:set nolz<CR>
   nmap <silent> E :set lz<CR>:call <SID>EasyMines()<CR>:set nolz<CR>
   nmap <silent> M :set lz<CR>:call <SID>MedMines()<CR>:set nolz<CR>
   nmap <silent> H :set lz<CR>:call <SID>HardMines()<CR>:set nolz<CR>
@@ -644,15 +678,15 @@ fun! <SID>StopMines(suspend)
   endif
 
   " remove maps
-  nunmap <leftmouse>
-  nunmap <rightmouse>
-  nunmap E
-  nunmap M
-  nunmap H
-  nunmap x
-  nunmap f
-  nunmap q
-  nunmap s
+  nun <leftmouse>
+  nun <rightmouse>
+  nun E
+  nun M
+  nun H
+  nun x
+  nun f
+  nun q
+  nun s
 
   " restore any pre-existing to <Mines.vim> maps
   if s:restoremap != ""
@@ -744,7 +778,7 @@ fun! <SID>MF_Flood(frow,fcol)
 
   redr!
   if s:MF_Posn(a:frow,a:fcol)
-"   call Dfunc("MF_Flood")
+"   call Dret("MF_Flood")
    return
   endif
   let colL= s:MF_FillLeft(a:frow,a:fcol)
@@ -757,7 +791,7 @@ fun! <SID>MF_Flood(frow,fcol)
   if a:frow < s:MFrows
    call s:MF_FillRun(a:frow+1,colL,colR)
   endif
-"  call Dfunc("MF_Flood")
+"  call Dret("MF_Flood")
 endfun
 
 " ---------------------------------------------------------------------
@@ -880,18 +914,18 @@ fun! <SID>MF_Posn(frow,fcol)
 
   " sanity checks
   if a:frow < 1 || s:MFrows < a:frow
-"   call Dfunc("MF_Posn 1")
+"   call Dret("MF_Posn 1")
    return 1
   endif
   if a:fcol < 1 || s:MFcols < a:fcol
-"   call Dfunc("MF_Posn 1")
+"   call Dret("MF_Posn 1")
    return 1
   endif
   let srow= a:frow + 1
   let scol= a:fcol + 1
   exe "norm! ".srow."G".scol."\<Bar>"
 
-"  call Dfunc("MF_Posn 0")
+"  call Dret("MF_Posn 0")
   return 0
 endfun
 
@@ -901,6 +935,9 @@ endfun
 "    Minnie does a cartwheel when you win
 fun! <SID>MF_Happy()
 "  call Dfunc("MF_Happy()")
+
+  " clean off right-hand side of minefield
+  %s/^:.\{-}:\zs.*$//e
 
   if s:timestart == 0
    " already gave a Happy!
@@ -965,11 +1002,14 @@ fun! <SID>MF_Happy()
   exe "norm! j0f:lDA             /\\    !!!"
   redr
 
-  exe "norm! jjA  Time  Used   : ".s:timelapse
+  exe "norm! jjA  Time  Used   : ".s:timelapse."sec"
   exe "norm! jA  Bombs Flagged: ".s:MFmines
 
   let s:timestart= 0
   let &ch        = keep_ch
+  if exists("s:utkeep")
+   let &ut= s:utkeep
+  endif
   call s:Winners(1)
   set nolz
   set nomod
@@ -988,61 +1028,44 @@ fun! <SID>Winners(winner)
    return
   endif
 
+  " sanity preservation
+  call s:StatSanity("E")
+  call s:StatSanity("M")
+  call s:StatSanity("H")
+
   " initialize statistics
   if filereadable($HOME."/.vimMines")
    exe "so ".$HOME."/.vimMines"
   else
-   call s:WriteStatistics(0)
+   call s:SaveStatistics(0)
   endif
 
-  " update statistics
-  let g:mines_wincnt  = g:mines_wincnt  +  a:winner
-  let g:mines_losecnt = g:mines_losecnt + !a:winner
-  if a:winner == 1
-   let g:mines_winstreak  = g:mines_winstreak + 1
-   let g:mines_losestreak = 0
-   else
-   let g:mines_losestreak = g:mines_losestreak + 1
-   let g:mines_winstreak  = 0
-  endif
-
-  if a:winner == 1
-   if s:field == "E" && ( g:mines_Etime == 0 || g:mines_Etime > s:timelapse )
-    let g:mines_Etime= s:timelapse
-   endif
-   if s:field == "M" && ( g:mines_Mtime == 0 || g:mines_Mtime > s:timelapse )
-    let g:mines_Mtime= s:timelapse
-   endif
-   if s:field == "H" && ( g:mines_Htime == 0 || g:mines_Htime > s:timelapse )
-    let g:mines_Htime= s:timelapse
-   endif
-  endif
-
-  " record statistics
-  call s:WriteStatistics(1)
+  call s:UpdateStatistics(a:winner)
+  call s:SaveStatistics(1)
 
   " report on statistics
   norm! j
-  exe  "norm! j$lA  totals: ".g:mines_wincnt." wins,  ".g:mines_losecnt." losses"
-  if g:mines_winstreak > 0
-   exe "norm! j$lA  streak: ".g:mines_winstreak." wins"
+  exe  "norm! j$lA  totals         : ".g:mines_wincnt{s:field}." wins, ".g:mines_losecnt{s:field}." losses"
+  if g:mines_curwinstreak{s:field} > 0
+   exe "norm! j$lA  current streak : ".g:mines_curwinstreak{s:field}." wins"
   else
-   exe "norm! j$lA  streak: ".g:mines_losestreak." losses"
+   exe "norm! j$lA  current streak : ".g:mines_curlosestreak{s:field}." losses"
   endif
+  exe "norm! j$lA  longest streaks: ".g:mines_winstreak{s:field}." wins, ".g:mines_losestreak{s:field}." losses"
 
   if s:field == "E"
-   if g:mines_Etime > 0
-    exe "norm! j$lA  best time=".g:mines_Etime."sec (easy)"
+   if g:mines_timeE > 0
+    exe "norm! j$lA  best time=".g:mines_timeE."sec (easy)"
    endif
   endif
   if s:field == "M"
-   if g:mines_Mtime > 0
-    exe "norm! j$lA  best time=".g:mines_Mtime."sec (medium)"
+   if g:mines_timeM > 0
+    exe "norm! j$lA  best time=".g:mines_timeM."sec (medium)"
    endif
   endif
   if s:field == "H"
-   if g:mines_Htime > 0
-    exe "norm! j$lA  best time=".g:mines_Htime."sec (hard)"
+   if g:mines_timeH > 0
+    exe "norm! j$lA  best time=".g:mines_timeH."sec (hard)"
    endif
   endif
 
@@ -1050,40 +1073,123 @@ fun! <SID>Winners(winner)
 endfun
 
 " ---------------------------------------------------------------------
-" WriteStatistics: {{{2
-fun! s:WriteStatistics(mode)
-"  call Dfunc("WriteStatistics(mode=".a:mode.")")
+" UpdateStatistics: {{{2
+fun! <SID>UpdateStatistics(winner)
+"  call Dfunc("UpdateStatistics(winner<".a:winner.">) s:field<".s:field.">")
+
+  " update statistics
+  let g:mines_wincnt{s:field}  = g:mines_wincnt{s:field}  +  a:winner
+  let g:mines_losecnt{s:field} = g:mines_losecnt{s:field} + !a:winner
+  if a:winner == 1
+   let g:mines_curwinstreak{s:field}  = g:mines_curwinstreak{s:field} + 1
+   let g:mines_curlosestreak{s:field} = 0
+   if g:mines_curwinstreak{s:field} > g:mines_winstreak{s:field}
+   	let g:mines_winstreak{s:field}= g:mines_curwinstreak{s:field}
+   endif
+  else
+   let g:mines_curlosestreak{s:field} = g:mines_curlosestreak{s:field} + 1
+   let g:mines_curwinstreak{s:field}  = 0
+   if g:mines_curlosestreak{s:field} > g:mines_losestreak{s:field}
+   	let g:mines_losestreak{s:field}= g:mines_curlosestreak{s:field}
+   endif
+  endif
+
+  if a:winner == 1
+   if g:mines_time{s:field} == 0 || g:mines_time{s:field} > s:timelapse
+   	let g:mines_time{s:field}= s:timelapse
+   endif
+  endif
+"  call Dret("UpdateStatistics")
+endfun
+
+" ---------------------------------------------------------------------
+" StatSanity: make sure statistics variables are initialized to zero {{{2
+"             if they don't exist
+fun! s:StatSanity(field)
+"  call Dfunc("StatSanity(field<".a:field.">)")
+
+   let g:mines_wincnt{a:field}        = 0
+   let g:mines_curwinstreak{a:field}  = 0
+   let g:mines_curlosestreak{a:field} = 0
+   let g:mines_winstreak{a:field}     = 0
+   let g:mines_losestreak{a:field}    = 0
+   let g:mines_losecnt{a:field}       = 0
+   if !exists("g:mines_time{a:field}")
+    let g:mines_time{a:field}         = 0
+   endif
+
+"  call Dret("StatSanity")
+endfun
+
+" ---------------------------------------------------------------------
+" SaveStatistics: {{{2
+fun! s:SaveStatistics(mode)
+"  call Dfunc("SaveStatistics(mode=".a:mode.")")
 
   if $HOME == ""
-"   call Dfunc("WriteStatistics : no $HOME")
+"   call Dret("SaveStatistics : no $HOME")
    return
   endif
 
   if a:mode == 0
-   let g:mines_wincnt     = 0
-   let g:mines_winstreak  = 0
-   let g:mines_losecnt    = 0
-   let g:mines_losestreak = 0
-   let g:mines_Etime      = 0
-   let g:mines_Mtime      = 0
-   let g:mines_Htime      = 0
+   let g:mines_wincntE        = 0
+   let g:mines_curwinstreakE  = 0
+   let g:mines_curlosestreakE = 0
+   let g:mines_winstreakE     = 0
+   let g:mines_losestreakE    = 0
+   let g:mines_losecntE       = 0
+   let g:mines_timeE          = 0
+
+   let g:mines_wincntM        = 0
+   let g:mines_curwinstreakM  = 0
+   let g:mines_curlosestreakM = 0
+   let g:mines_winstreakM     = 0
+   let g:mines_losestreakM    = 0
+   let g:mines_losecntM       = 0
+   let g:mines_timeM          = 0
+
+   let g:mines_wincntH        = 0
+   let g:mines_curwinstreakH  = 0
+   let g:mines_curlosestreakH = 0
+   let g:mines_winstreakH     = 0
+   let g:mines_losestreakH    = 0
+   let g:mines_losecntH       = 0
+   let g:mines_timeH          = 0
   endif
 
   " write statistics to $HOME/.vimMines
   exe "silent! vsp ".$HOME."/.vimMines"
   setlocal bh=wipe
   silent! %d
-  put ='let g:mines_wincnt    ='.g:mines_wincnt
-  put ='let g:mines_winstreak ='.g:mines_winstreak
-  put ='let g:mines_losecnt   ='.g:mines_losecnt
-  put ='let g:mines_losestreak='.g:mines_losestreak
-  put ='let g:mines_Etime     ='.g:mines_Etime
-  put ='let g:mines_Mtime     ='.g:mines_Mtime
-  put ='let g:mines_Htime     ='.g:mines_Htime
+
+  put ='let g:mines_wincntE       ='.g:mines_wincntE
+  put ='let g:mines_curwinstreakE ='.g:mines_curwinstreakE
+  put ='let g:mines_curlosestreakE='.g:mines_curlosestreakE
+  put ='let g:mines_winstreakE    ='.g:mines_winstreakE
+  put ='let g:mines_losestreakE   ='.g:mines_losestreakE
+  put ='let g:mines_losecntE      ='.g:mines_losecntE
+  put ='let g:mines_timeE         ='.g:mines_timeE
+
+  put ='let g:mines_wincntM       ='.g:mines_wincntM
+  put ='let g:mines_curwinstreakM ='.g:mines_curwinstreakM
+  put ='let g:mines_curlosestreakM='.g:mines_curlosestreakM
+  put ='let g:mines_winstreakM    ='.g:mines_winstreakM
+  put ='let g:mines_losestreakM   ='.g:mines_losestreakM
+  put ='let g:mines_losecntM      ='.g:mines_losecntM
+  put ='let g:mines_timeM         ='.g:mines_timeM
+
+  put ='let g:mines_wincntH       ='.g:mines_wincntH
+  put ='let g:mines_curwinstreakH ='.g:mines_curwinstreakH
+  put ='let g:mines_curlosestreakH='.g:mines_curlosestreakH
+  put ='let g:mines_winstreakH    ='.g:mines_winstreakH
+  put ='let g:mines_losestreakH   ='.g:mines_losestreakH
+  put ='let g:mines_losecntH      ='.g:mines_losecntH
+  put ='let g:mines_timeH         ='.g:mines_timeH
+
   silent! w!
   silent! q!
 
-"  call Dret("WriteStatistics")
+"  call Dret("SaveStatistics")
 endfun
 
 " ---------------------------------------------------------------------
@@ -1160,10 +1266,13 @@ finish
 " ---------------------------------------------------------------------
 " Put the help after the HelpExtractorDoc label...
 " HelpExtractorDoc:
-*Mines.txt*	The Mines Game 				Jun 28, 2004
+*Mines.txt*	The Mines Game 				Jul 28, 2004
 
-Author:  Charles E. Campbell, Jr.  <cec@NgrOyphSon.gPsfAc.nMasa.gov>
-	  (remove NOSPAM from Campbell's email first)
+Author:  Charles E. Campbell, Jr.  <NdrOchip@ScampbellPfamily.AbizM>
+	  (remove NOSPAM from the email address first)
+
+=============================================================================
+1. Mines:						*mines*
 
 Mines is a Vim plugin, but you may source it in on demand if you wish.
 You'll need <Mines.vim> and <Rndm.vim> - the latter file is available
@@ -1171,8 +1280,11 @@ as "Rndm" at the following website:
 
     http://www.erols.com/astronaut/vim/index.html#VimFuncs
 
+
+STARTING
+
     Games:						*mines-start*
-	\mfc : clear statistics (when a game is not showing)
+        \mfc : clear statistics (when a game is not showing)
         \mfe : play an easy mines game
         \mfm : play a  medium-difficulty mines game
         \mfh : play a  high-difficulty mines game
@@ -1182,16 +1294,32 @@ Note that using the \mf_ maps will save the files showing in all windows and
 save your session.  Although I've used the backslash in the maps as shown here,
 actually they use <Leader> so you may customize your maps using mapleader.
 
+
+USE AT YOUR OWN RISK
+
 Mines.vim is a use-at-your-own-risk game.  However, an effort has been made
 to preserve your files.  The game does a "windo w" and uses mksession to both
 save your working files that are showing in your windows and to preserve your
 window layout for subsequent restoration.
 
+
+OBJECTIVE
+
+The objective of the game is to flag all mines and to reveal all safe
+squares.  As soon as you click a <leftmouse> or x, the square under the cursor
+is revealed with either a count of the number of bombs around it or as a BOOM!
+
+Statistics are stored in <$HOME/.vimMines>.  You need to have a $HOME
+for statistics to be kept!
+
+If you win Minnie will do a cartwheel for you!
+
+
+GAME INTERFACE
+
 On many terminals, all you need to do is to click with the left mouse (to see
 what's there, or maybe to go BOOM!) or to click with the rightmouse to flag
 what you think is a mine.
-
-    More Maps:
 
      -Play-						*mines-play*
         x   move the cursor around the field;
@@ -1220,18 +1348,18 @@ what you think is a mine.
         H   starts up a new hard game
             (only while an old game is showing)
 
-The objective of the game is to flag all mines and to reveal all safe
-squares.  As soon as you click a <leftmouse> or x, the square under the cursor
-is revealed with either a count of the number of bombs around it or as a BOOM!
-
-Statistics are stored in <$HOME/.vimMines>.  You need to have a $HOME
-for statistics to be kept!
-
-If you win Minnie will do a cartwheel for you!
 
 =============================================================================
+2. History:						*mines-history*
 
-History:						*mines-history*
+   10 : 07/28/04 : * updatetime now 200ms, affects time-left display when
+                     g:mines_timer is true.  Restored after game finished.
+                   * longest winning/losing streaks now computed&displayed
+                   * statistics now kept separately for each field size
+		   * now includes a title
+		   * CursorHold used to fix highlighting after a
+		     colorscheme change
+    9 : 06/28/04 : * Mines now handles light as well as dark backgrounds
     8 : 06/15/04 : * improved look of Minnie at the end
                    * total/streak win/loss statistics
     7 : 12/08/03 : changed a norm to norm! to avoid <c-y> mapping
@@ -1250,4 +1378,5 @@ History:						*mines-history*
     2 : 01/31/03 : now intercepts attempts to restore a quit game
                    quit games' s:minebufnum is now unlet
 
+=============================================================================
 vim:tw=78:ts=8:ft=help
