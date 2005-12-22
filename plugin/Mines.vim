@@ -1,14 +1,29 @@
 " Mines.vim: emulates a minefield
 "   Author:		Charles E. Campbell, Jr.
-"   Date:		Aug 27, 2004
-"   Version:	11
+"   Date:		Dec 21, 2005
+"   Version:	12
+" Copyright:    Copyright (C) 1999-2005 Charles E. Campbell, Jr. {{{1
+"               Permission is hereby granted to use and distribute this code,
+"               with or without modifications, provided that this copyright
+"               notice is copied with it. Like anything else that's free,
+"               Mines.vim is provided *as is* and comes with no warranty
+"               of any kind, either expressed or implied. By using this
+"               plugin, you agree that in no event will the copyright
+"               holder be liable for any damages resulting from the use
+"               of this software.
 " GetLatestVimScripts: 551 1 :AutoInstall: Mines.vim
+"
+"  There is therefore now no condemnation to those who are in {{{1
+"  Christ Jesus, who don't walk according to the flesh, but
+"  according to the Spirit. (Rom 8:1 WEB)
 " ---------------------------------------------------------------------
 "  Single Loading Only: {{{1
-if &cp || exists("g:loaded_minefield")
+if &cp || exists("g:loaded_Mines")
  finish
 endif
-let g:loaded_minefield= 1
+let g:loaded_Mines = "v12"
+let s:keepcpo      = &cpo
+set cpo&vim
 
 " ---------------------------------------------------------------------
 "  Mining Variables: {{{1
@@ -56,13 +71,16 @@ if !hasmapto('<Plug>SaveStatistics')
 endif
 nmap <silent> <script> <Plug>SaveStatistics	:set lz<CR>:call <SID>SaveStatistics(0)<CR>:set nolz<CR>
 
-" ---------------------------------------------------------------------
+" =====================================================================
 " Functions: {{{1
+
+" ---------------------------------------------------------------------
 " EasyMines: {{{2
 "    Requires an 12x12 grid be displayable
 fun! <SID>EasyMines()
 "  let g:decho_hide= 1  "Decho
 "  call Dfunc("EasyMines()")
+  if s:SanityCheck()|return|endif
   let s:field = "E"
   let m1      = g:rndm_m1 + (localtime()%100 - 50)
   let m2      = g:rndm_m2 + (localtime()/86400)%100
@@ -72,11 +90,13 @@ fun! <SID>EasyMines()
 "  call Dret("EasyMines")
 endfun
 
+" ---------------------------------------------------------------------
 " MedMines: {{{2
 "    Requires a 24x24 grid be displayable
 fun! <SID>MedMines()
 "  let g:decho_hide= 1  "Decho
 "  call Dfunc("MedMines()")
+  if s:SanityCheck()|return|endif
   let s:field = "M"
   let m1      = g:rndm_m1 + (localtime()%100 - 50)
   let m2      = g:rndm_m2 + (localtime()/86400)%100
@@ -86,11 +106,13 @@ fun! <SID>MedMines()
 "  call Dret("MedMines")
 endfun
 
+" ---------------------------------------------------------------------
 " HardMines: {{{2{
 "    Requies a 50x50 grid be displayable
 fun! <SID>HardMines()
 "  let g:decho_hide= 1  "Decho
 "  call Dfunc("HardMines()")
+  if s:SanityCheck()|return|endif
   let s:field = "H"
   let m1      = g:rndm_m1 + (localtime()%100 - 50)
   let m2      = g:rndm_m2 + (localtime()/86400)%100
@@ -101,7 +123,24 @@ fun! <SID>HardMines()
 endfun
 
 " ---------------------------------------------------------------------
+"  SanityCheck: {{{2
+fun! s:SanityCheck()
+  if !exists("*RndmInit")
+   rightb split
+   enew
+   setlocal bt=nofile
+   put ='You need Rndm.vim!'
+   put =' '
+   put ='Rndm.vim is available at'
+   put ='http://mysite.verizon.net/astronaut/vim/index.html#VimFuncs'
+   let msg='as "Rndm"  (Rndm is what generates pseudo-random variates)'
+   put =msg
+   return 1
+  endif
+  return 0
+endfun
 
+" ---------------------------------------------------------------------
 " MineFieldSettings: {{{2
 "   Can be used to generate a custom-sized display.
 "   The grid will be rows x cols big, plus 2 rows and columns for
@@ -132,7 +171,6 @@ fun! MineFieldSettings(rows,cols,mines,timelapse)
 endfun
 
 " ---------------------------------------------------------------------
-
 " InitMines: {{{2
 fun! <SID>InitMines()
 "  call Dfunc("InitMines(".s:MFrows."x".s:MFcols." mines=".s:MFmines.")")
@@ -140,6 +178,8 @@ fun! <SID>InitMines()
   call s:DisplayMines(1)
   call s:ToggleMineTimer(g:mines_timer)
 
+  let s:keep_list= &list
+  set nolist
   " draw grid
 "  call Decho("draw grid")
   let col= 1
@@ -242,7 +282,6 @@ fun! <SID>InitMines()
 endfun
 
 " ---------------------------------------------------------------------
-
 " ColLimit: {{{2
 fun! <SID>ColLimit(col)
 "  call Dfunc("ColLimit(col=".a:col.")")
@@ -258,7 +297,6 @@ fun! <SID>ColLimit(col)
 endfun
 
 " ---------------------------------------------------------------------
-
 " RowLimit: {{{2
 fun! <SID>RowLimit(row)
 "  call Dfunc("RowLimit(row=".a:row.")")
@@ -274,7 +312,6 @@ fun! <SID>RowLimit(row)
 endfun
 
 " ---------------------------------------------------------------------
-
 " DrawMinefield: {{{2
 "     This function is responsible for drawing the minefield
 "     as the mouse is clicked
@@ -309,7 +346,6 @@ fun! <SID>DrawMinefield()
 endfun
 
 " ---------------------------------------------------------------------
-
 " DrawMineflag: {{{2
 "    This function is responsible for drawing the minefield
 "    flags as the rightmouse is clicked
@@ -373,7 +409,6 @@ fun! <SID>DrawMineflag()
 endfun
 
 " ---------------------------------------------------------------------
-
 " TimeLapse: {{{2
 fun! s:TimeLapse()
 "  call Dfunc("TimeLapse()")
@@ -404,7 +439,6 @@ fun! s:TimeLapse()
 endfun
 
 " ---------------------------------------------------------------------
-
 " ToggleMineTimer: {{{2
 "    Toggles timing use
 "      0: turn off
@@ -443,7 +477,6 @@ fun! s:ToggleMineTimer(mode)
 endfun
 
 " ---------------------------------------------------------------------
-
 " Boom: {{{2
 fun! s:Boom()
 "  call Dfunc("Boom()")
@@ -506,7 +539,6 @@ fun! s:Boom()
 endfun
 
 " ---------------------------------------------------------------------
-
 " MFSyntax: {{{2
 "   Set up syntax highlighting for minefield
 fun! <SID>MFSyntax()
@@ -584,7 +616,6 @@ fun! <SID>MFSyntax()
 endfun
 
 " ---------------------------------------------------------------------
-
 " DisplayMines: {{{2
 "    Displays a Minefield and sets up Minefield mappings
 fun! <SID>DisplayMines(init)
@@ -654,7 +685,6 @@ fun! <SID>DisplayMines(init)
 endfun
 
 " ---------------------------------------------------------------------
-
 " StopMines: {{{2
 "         Stops the Mines game; it can either truly quit
 "            Mines or merely temporarily suspend Mines.
@@ -675,6 +705,7 @@ fun! <SID>StopMines(suspend)
    let &hidden   = s:keep_hidden
    let &mouse    = s:keep_mouse
    let &gdefault = s:keep_gdefault
+   let &list     = s:keep_list
    " restore display based on savesession
    exe "source ".s:savesession
    call delete(s:savesession)
@@ -709,7 +740,6 @@ fun! <SID>StopMines(suspend)
 endfun
 
 " ---------------------------------------------------------------------
-
 " SaveSession: {{{2
 "    Save session into given savefile
 fun! SaveSession(savefile)
@@ -736,7 +766,6 @@ fun! SaveSession(savefile)
 endfun
 
 " ---------------------------------------------------------------------
-
 " ShowAt: {{{2
 "    This function displays the Minefield at the given row,column
 fun! <SID>ShowAt(row,col)
@@ -757,7 +786,6 @@ fun! <SID>ShowAt(row,col)
 endfun
 
 " ---------------------------------------------------------------------
-
 " CheckIfFlagged: {{{2
 "    When marking a square, this function keeps track of
 "    how many squares are flagged and how many are marked
@@ -776,7 +804,6 @@ fun! <SID>CheckIfFlagged()
 endfun
 
 " ---------------------------------------------------------------------
-
 " MF_Flood: {{{2
 "    Fills in 0-minefield count area
 "      frow,fcol: mine-f-ield row and column
@@ -803,7 +830,6 @@ fun! <SID>MF_Flood(frow,fcol)
 endfun
 
 " ---------------------------------------------------------------------
-
 "  MF_FillLeft: {{{2
 fun! <SID>MF_FillLeft(frow,fcol)
 "  call Dfunc("MF_FillLeft(frow=".a:frow.",fcol=".a:fcol.")")
@@ -839,7 +865,6 @@ fun! <SID>MF_FillLeft(frow,fcol)
 endfun
 
 " ---------------------------------------------------------------------
-
 "  MF_FillRight: {{{2
 fun! <SID>MF_FillRight(frow,fcol)
 "  call Dfunc("MF_FillRight(frow=".a:frow.",fcol=".a:fcol.")")
@@ -875,7 +900,6 @@ fun! <SID>MF_FillRight(frow,fcol)
 endfun
 
 " ---------------------------------------------------------------------
-
 "  MF_FillRun: {{{2
 fun! <SID>MF_FillRun(frow,fcolL,fcolR)
 "  call Dfunc("MF_FillRun(frow=".a:frow.",fcol[".a:fcolL.",".a:fcolR."])")
@@ -911,7 +935,6 @@ fun! <SID>MF_FillRun(frow,fcolL,fcolR)
 endfun
 
 " ---------------------------------------------------------------------
-
 " MF_Posn: {{{2
 "    Put cursor into given position on screen
 "       srow,scol: -s-creen    row and column
@@ -938,7 +961,6 @@ fun! <SID>MF_Posn(frow,fcol)
 endfun
 
 " ---------------------------------------------------------------------
-
 " MF_Happy: {{{2
 "    Minnie does a cartwheel when you win
 fun! <SID>MF_Happy()
@@ -1026,7 +1048,6 @@ fun! <SID>MF_Happy()
 endfun
 
 " ---------------------------------------------------------------------
-
 " Winners: checks top winners in the $HOME directory {{{2
 fun! <SID>Winners(winner)
 "  call Dfunc("Winners(winner=".a:winner.")")
@@ -1053,7 +1074,13 @@ fun! <SID>Winners(winner)
 
   " report on statistics
   norm! j
-  exe  "norm! j$lA  totals         : ".g:mines_wincnt{s:field}." wins, ".g:mines_losecnt{s:field}." losses"
+  if g:mines_losecnt{s:field} > 0
+   let percent= (1000*g:mines_wincnt{s:field})/g:mines_losecnt{s:field}
+   let percent= (percent + 5)/10
+   exe  "norm! j$lA  totals         : [".g:mines_wincnt{s:field}." wins]/[".g:mines_losecnt{s:field}." losses]=".percent."%"
+  else
+   exe  "norm! j$lA  totals         : ".g:mines_wincnt{s:field}." wins, ".g:mines_losecnt{s:field}." losses"
+  endif
   if g:mines_curwinstreak{s:field} > 0
    exe "norm! j$lA  current streak : ".g:mines_curwinstreak{s:field}." wins"
   else
@@ -1201,7 +1228,6 @@ fun! s:SaveStatistics(mode)
 endfun
 
 " ---------------------------------------------------------------------
-
 " SaveMap: {{{2
 "    This function sets up a buffer-variable (s:restoremap)
 "          which will be used by StopDrawIt to restore user maps
@@ -1234,10 +1260,40 @@ fun! <SID>SaveMap(mapmode,maplead,mapchx)
 endfun
 
 " ---------------------------------------------------------------------
+"  Restore: {{{1
+let &cpo= s:keepcpo
+unlet s:keepcpo
+
+" ---------------------------------------------------------------------
+"  Modelines: {{{1
 " vim: ts=4 fdm=marker
 " HelpExtractor:
+"  Author:	Charles E. Campbell, Jr.
+"  Version:	3
+"  Date:	May 25, 2005
+"
+"  History:
+"    v3 May 25, 2005 : requires placement of code in plugin directory
+"                      cpo is standardized during extraction
+"    v2 Nov 24, 2003 : On Linux/Unix, will make a document directory
+"                      if it doesn't exist yet
+"
+" GetLatestVimScripts: 748 1 HelpExtractor.vim
+" ---------------------------------------------------------------------
 set lz
-let docdir = substitute(expand("<sfile>:r").".txt",'\<plugin[/\\].*$','doc','')
+let s:HelpExtractor_keepcpo= &cpo
+set cpo&vim
+let docdir = expand("<sfile>:r").".txt"
+if docdir =~ '\<plugin\>'
+ let docdir = substitute(docdir,'\<plugin[/\\].*$','doc','')
+else
+ if has("win32")
+  echoerr expand("<sfile>:t").' should first be placed in your vimfiles\plugin directory'
+ else
+  echoerr expand("<sfile>:t").' should first be placed in your .vim/plugin directory'
+ endif
+ finish
+endif
 if !isdirectory(docdir)
  if has("win32")
   echoerr 'Please make '.docdir.' directory first'
@@ -1269,15 +1325,21 @@ set nolz
 unlet docdir
 unlet curfile
 "unlet docfile
+let &cpo= s:HelpExtractor_keepcpo
+unlet s:HelpExtractor_keepcpo
 finish
 
 " ---------------------------------------------------------------------
 " Put the help after the HelpExtractorDoc label...
 " HelpExtractorDoc:
-*Mines.txt*	The Mines Game 				Jul 28, 2004
+*Mines.txt*	The Mines Game 				Nov 19, 2004
 
 Author:  Charles E. Campbell, Jr.  <NdrOchip@ScampbellPfamily.AbizM>
 	  (remove NOSPAM from the email address first)
+Copyright: (c) 2004-2005 by Charles E. Campbell, Jr.	*mines-copyright*
+           The VIM LICENSE applies to Mines.vim and Mines.txt
+           (see |copyright|) except use "Mines" instead of "Vim"
+	   No warranty, express or implied.  Use At-Your-Own-Risk.
 
 =============================================================================
 1. Mines:						*mines*
@@ -1286,7 +1348,7 @@ Mines is a Vim plugin, but you may source it in on demand if you wish.
 You'll need <Mines.vim> and <Rndm.vim> - the latter file is available
 as "Rndm" at the following website:
 
-    http://www.erols.com/astronaut/vim/index.html#VimFuncs
+    http://mysite.verizon.net/astronaut/vim/index.html#VimFuncs
 
 
 STARTING
@@ -1300,7 +1362,8 @@ STARTING
 
 Note that using the \mf_ maps will save the files showing in all windows and
 save your session.  Although I've used the backslash in the maps as shown here,
-actually they use <Leader> so you may customize your maps using mapleader.
+actually they use <Leader> so you may customize your maps as usual (see
+|mapleader| for more about <Leader>).
 
 
 USE AT YOUR OWN RISK
@@ -1316,11 +1379,14 @@ OBJECTIVE
 The objective of the game is to flag all mines and to reveal all safe
 squares.  As soon as you click a <leftmouse> or x, the square under the cursor
 is revealed with either a count of the number of bombs around it or as a BOOM!
+Of course, to use a mouse means your vim must support using the mouse.  Gvim
+usually does; console vim may or may not depending on your supporting
+terminal (see |mouse|).
 
 Statistics are stored in <$HOME/.vimMines>.  You need to have a $HOME
-for statistics to be kept!
+environment variable set up properly for statistics to be kept.
 
-If you win Minnie will do a cartwheel for you!
+If you win, Minnie will do a cartwheel for you!
 
 
 GAME INTERFACE
@@ -1358,8 +1424,42 @@ what you think is a mine.
 
 
 =============================================================================
+3. Hints:						*mines-hints*
+
+My own win rate with Mines is about 30%, so don't expect a sure fire
+way-to-win!  However, here are some hints.  If you don't want to see them,
+close your eyes!
+
+	1-9 qty of bombs in vicinity
+	#   any number
+	o   any number or blank (no bomb) space
+	?   unknown
+	f   flag the space
+	x   find out what's in the space
+
+	 Pattern         Can Safely Do         Pattern         Can Safely Do
+         ooooo             ooooo                                            
+         oo3oo             oo3oo             	oooo              oooo 
+	                    fff              	111o              111o 
+                                             	                    x  
+
+	+-----             +-----                                           
+	|ooo               |ooo              	oooo              oooo 
+	|22o..             |22o..            	122o              122o 
+	|??                |ffx              	                    f  
+
+
+	 ooooo            ooooo
+	 #121#            #121#
+                           fxf
+
+
+=============================================================================
 2. History:						*mines-history*
 
+   12 : 05/23/05   * Mines will issue a message that Rndm is missing
+		     (and where to get it) when Rndm is missing
+		   * Mines' win message now includes percentage of wins
    11 : 08/02/04 : * an X will now mark the bomb that went off
                    * bugfix: an "f" on a previously determined site
 		     (whether numbered or blank) will now have no effect
