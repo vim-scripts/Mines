@@ -1,7 +1,7 @@
 " Mines.vim: emulates a minefield
 "   Author:		Charles E. Campbell, Jr.
-"   Date:		Dec 21, 2005
-"   Version:	12
+"   Date:		Jan 06, 2006
+"   Version:	13
 " Copyright:    Copyright (C) 1999-2005 Charles E. Campbell, Jr. {{{1
 "               Permission is hereby granted to use and distribute this code,
 "               with or without modifications, provided that this copyright
@@ -12,6 +12,7 @@
 "               holder be liable for any damages resulting from the use
 "               of this software.
 " GetLatestVimScripts: 551 1 :AutoInstall: Mines.vim
+" GetLatestVimScripts: 1066 1 cecutil.vim
 "
 "  There is therefore now no condemnation to those who are in {{{1
 "  Christ Jesus, who don't walk according to the flesh, but
@@ -21,7 +22,7 @@
 if &cp || exists("g:loaded_Mines")
  finish
 endif
-let g:loaded_Mines = "v12"
+let g:loaded_Mines = "v13"
 let s:keepcpo      = &cpo
 set cpo&vim
 
@@ -716,24 +717,8 @@ fun! <SID>StopMines(suspend)
    exe "source ".s:savesession
   endif
 
-  " remove maps
-  nun <leftmouse>
-  nun <rightmouse>
-  nun E
-  nun M
-  nun H
-  nun x
-  nun f
-  nun q
-  nun s
-
   " restore any pre-existing to <Mines.vim> maps
-  if s:restoremap != ""
-   echomsg s:restoremap
-   let s:restoremap= escape(s:restoremap,'|')
-   exe s:restoremap
-   unlet s:restoremap
-  endif
+  call RestoreUserMaps("Mines")
   let s:timestop= localtime()
 
 "  call Dret("StopMines")
@@ -747,10 +732,9 @@ fun! SaveSession(savefile)
   silent! windo w
 
   " Save any pre-existing maps that conflict with <Mines.vim>'s maps
-  let s:restoremap  = ""
-  call s:SaveMap("n","","emhxqsf")
-  call s:SaveMap("n","","<leftmouse>")
-  call s:SaveMap("n","","<rightmouse>")
+  call SaveUserMaps("n","","emhxqsf","Mines")
+  call SaveUserMaps("n","","<leftmouse>","Mines")
+  call SaveUserMaps("n","","<rightmouse>","Mines")
 
   let keep_ssop       = &ssop
   let s:keep_hidden   = &hidden
@@ -1075,9 +1059,11 @@ fun! <SID>Winners(winner)
   " report on statistics
   norm! j
   if g:mines_losecnt{s:field} > 0
-   let percent= (1000*g:mines_wincnt{s:field})/g:mines_losecnt{s:field}
+   let percent= (10000*g:mines_wincnt{s:field})/g:mines_losecnt{s:field}
    let percent= (percent + 5)/10
-   exe  "norm! j$lA  totals         : [".g:mines_wincnt{s:field}." wins]/[".g:mines_losecnt{s:field}." losses]=".percent."%"
+   let tenth   = percent % 10
+   let percent = (percent - tenth)/10
+   exe  "norm! j$lA  totals         : [".g:mines_wincnt{s:field}." wins]/[".g:mines_losecnt{s:field}." losses]=".percent.'.'.tenth."%"
   else
    exe  "norm! j$lA  totals         : ".g:mines_wincnt{s:field}." wins, ".g:mines_losecnt{s:field}." losses"
   endif
@@ -1228,38 +1214,6 @@ fun! s:SaveStatistics(mode)
 endfun
 
 " ---------------------------------------------------------------------
-" SaveMap: {{{2
-"    This function sets up a buffer-variable (s:restoremap)
-"          which will be used by StopDrawIt to restore user maps
-"          mapchx: either <something>  which is handled as one map item
-"                  or a string of single letters which are multiple maps
-"                  ex.  mapchx="abc" and maplead='\': \a \b and \c are saved
-fun! <SID>SaveMap(mapmode,maplead,mapchx)
-"  call Dfunc("SaveMap(mapmode<".a:mapmode."> maplead<".a:maplead."> mapchx<".a:mapchx.">)")
-
-  if strpart(a:mapchx,0,1) == '<'
-	" save single map <something>
-	if maparg(a:mapchx,a:mapmode) != ""
-	  let s:restoremap= a:mapmode."map ".a:mapchx." ".maparg(a:mapchx,a:mapmode)."|".s:restoremap
-	  exe a:mapmode."unmap ".a:mapchx
-	 endif
-  else
-	" save multiple maps
-	let i= 1
-	while i <= strlen(a:mapchx)
-	 let amap=a:maplead.strpart(a:mapchx,i-1,1)
-	 if maparg(amap,a:mapmode) != ""
-	  let s:restoremap= a:mapmode."map ".amap." ".maparg(amap,a:mapmode)."|".s:restoremap
-	  exe "silent! ".a:mapmode."unmap ".amap
-	 endif
-	 let i= i + 1
-	endwhile
-  endif
-
-"  call Dret("SaveMap")
-endfun
-
-" ---------------------------------------------------------------------
 "  Restore: {{{1
 let &cpo= s:keepcpo
 unlet s:keepcpo
@@ -1267,230 +1221,3 @@ unlet s:keepcpo
 " ---------------------------------------------------------------------
 "  Modelines: {{{1
 " vim: ts=4 fdm=marker
-" HelpExtractor:
-"  Author:	Charles E. Campbell, Jr.
-"  Version:	3
-"  Date:	May 25, 2005
-"
-"  History:
-"    v3 May 25, 2005 : requires placement of code in plugin directory
-"                      cpo is standardized during extraction
-"    v2 Nov 24, 2003 : On Linux/Unix, will make a document directory
-"                      if it doesn't exist yet
-"
-" GetLatestVimScripts: 748 1 HelpExtractor.vim
-" ---------------------------------------------------------------------
-set lz
-let s:HelpExtractor_keepcpo= &cpo
-set cpo&vim
-let docdir = expand("<sfile>:r").".txt"
-if docdir =~ '\<plugin\>'
- let docdir = substitute(docdir,'\<plugin[/\\].*$','doc','')
-else
- if has("win32")
-  echoerr expand("<sfile>:t").' should first be placed in your vimfiles\plugin directory'
- else
-  echoerr expand("<sfile>:t").' should first be placed in your .vim/plugin directory'
- endif
- finish
-endif
-if !isdirectory(docdir)
- if has("win32")
-  echoerr 'Please make '.docdir.' directory first'
-  unlet docdir
-  finish
- elseif !has("mac")
-  exe "!mkdir ".docdir
- endif
-endif
-
-let curfile = expand("<sfile>:t:r")
-let docfile = substitute(expand("<sfile>:r").".txt",'\<plugin\>','doc','')
-exe "silent! 1new ".docfile
-silent! %d
-exe "silent! 0r ".expand("<sfile>:p")
-silent! 1,/^" HelpExtractorDoc:$/d
-exe 'silent! %s/%FILE%/'.curfile.'/ge'
-exe 'silent! %s/%DATE%/'.strftime("%b %d, %Y").'/ge'
-norm! Gdd
-silent! wq!
-exe "helptags ".substitute(docfile,'^\(.*doc.\).*$','\1','e')
-
-exe "silent! 1new ".expand("<sfile>:p")
-1
-silent! /^" HelpExtractor:$/,$g/.*/d
-silent! wq!
-
-set nolz
-unlet docdir
-unlet curfile
-"unlet docfile
-let &cpo= s:HelpExtractor_keepcpo
-unlet s:HelpExtractor_keepcpo
-finish
-
-" ---------------------------------------------------------------------
-" Put the help after the HelpExtractorDoc label...
-" HelpExtractorDoc:
-*Mines.txt*	The Mines Game 				Nov 19, 2004
-
-Author:  Charles E. Campbell, Jr.  <NdrOchip@ScampbellPfamily.AbizM>
-	  (remove NOSPAM from the email address first)
-Copyright: (c) 2004-2005 by Charles E. Campbell, Jr.	*mines-copyright*
-           The VIM LICENSE applies to Mines.vim and Mines.txt
-           (see |copyright|) except use "Mines" instead of "Vim"
-	   No warranty, express or implied.  Use At-Your-Own-Risk.
-
-=============================================================================
-1. Mines:						*mines*
-
-Mines is a Vim plugin, but you may source it in on demand if you wish.
-You'll need <Mines.vim> and <Rndm.vim> - the latter file is available
-as "Rndm" at the following website:
-
-    http://mysite.verizon.net/astronaut/vim/index.html#VimFuncs
-
-
-STARTING
-
-    Games:						*mines-start*
-        \mfc : clear statistics (when a game is not showing)
-        \mfe : play an easy mines game
-        \mfm : play a  medium-difficulty mines game
-        \mfh : play a  high-difficulty mines game
-        \mfr : restore a game
-
-Note that using the \mf_ maps will save the files showing in all windows and
-save your session.  Although I've used the backslash in the maps as shown here,
-actually they use <Leader> so you may customize your maps as usual (see
-|mapleader| for more about <Leader>).
-
-
-USE AT YOUR OWN RISK
-
-Mines.vim is a use-at-your-own-risk game.  However, an effort has been made
-to preserve your files.  The game does a "windo w" and uses mksession to both
-save your working files that are showing in your windows and to preserve your
-window layout for subsequent restoration.
-
-
-OBJECTIVE
-
-The objective of the game is to flag all mines and to reveal all safe
-squares.  As soon as you click a <leftmouse> or x, the square under the cursor
-is revealed with either a count of the number of bombs around it or as a BOOM!
-Of course, to use a mouse means your vim must support using the mouse.  Gvim
-usually does; console vim may or may not depending on your supporting
-terminal (see |mouse|).
-
-Statistics are stored in <$HOME/.vimMines>.  You need to have a $HOME
-environment variable set up properly for statistics to be kept.
-
-If you win, Minnie will do a cartwheel for you!
-
-
-GAME INTERFACE
-
-On many terminals, all you need to do is to click with the left mouse (to see
-what's there, or maybe to go BOOM!) or to click with the rightmouse to flag
-what you think is a mine.
-
-     -Play-						*mines-play*
-        x   move the cursor around the field;
-            pressing x is just like pressing a
-            <leftmouse> -- find out what's
-            hidden!
-
-        f   just like the <rightmouse>, flag
-            what's under the cursor as a mine
-
-     -Control-						*mines-control*
-        C   clear statistics (only while a game is showing)
-        s   suspend the game, restore the display
-            and session  (\mfr will subsequently
-            restore the game)
-
-        q   quit the game, restore the display
-
-     -New Games-					*mines-newgame*
-        E   starts up a new easy game
-            (only while an old game is showing)
-
-        M   starts up a new medium game
-            (only while an old game is showing)
-
-        H   starts up a new hard game
-            (only while an old game is showing)
-
-
-=============================================================================
-3. Hints:						*mines-hints*
-
-My own win rate with Mines is about 30%, so don't expect a sure fire
-way-to-win!  However, here are some hints.  If you don't want to see them,
-close your eyes!
-
-	1-9 qty of bombs in vicinity
-	#   any number
-	o   any number or blank (no bomb) space
-	?   unknown
-	f   flag the space
-	x   find out what's in the space
-
-	 Pattern         Can Safely Do         Pattern         Can Safely Do
-         ooooo             ooooo                                            
-         oo3oo             oo3oo             	oooo              oooo 
-	                    fff              	111o              111o 
-                                             	                    x  
-
-	+-----             +-----                                           
-	|ooo               |ooo              	oooo              oooo 
-	|22o..             |22o..            	122o              122o 
-	|??                |ffx              	                    f  
-
-
-	 ooooo            ooooo
-	 #121#            #121#
-                           fxf
-
-
-=============================================================================
-2. History:						*mines-history*
-
-   12 : 05/23/05   * Mines will issue a message that Rndm is missing
-		     (and where to get it) when Rndm is missing
-		   * Mines' win message now includes percentage of wins
-   11 : 08/02/04 : * an X will now mark the bomb that went off
-                   * bugfix: an "f" on a previously determined site
-		     (whether numbered or blank) will now have no effect
-		   * flipped the cterm=NONE and fg/bg specs about; some
-		     machines were showing all bold which equated to one
-		     color.
-   10 : 07/28/04 : * updatetime now 200ms, affects time-left display when
-                     g:mines_timer is true.  Restored after game finished.
-                   * longest winning/losing streaks now computed&displayed
-                   * statistics now kept separately for each field size
-		   * now includes a title
-		   * CursorHold used to fix highlighting after a
-		     colorscheme change
-    9 : 06/28/04 : * Mines now handles light as well as dark backgrounds
-    8 : 06/15/04 : * improved look of Minnie at the end
-                   * total/streak win/loss statistics
-    7 : 12/08/03 : changed a norm to norm! to avoid <c-y> mapping
-    6 : 10/16/03 : includes help
-    5 : 05/08/03 : adjusted Med/Hard to be 20% mines
-    4 : 02/03/03 : \mft toggles g:mines_timer
-                   colons lined up for Happy()
-                   multiple x hits after a Minnie repeated Minnie - fixed
-                   saves/restores gdefault (turns it to nogd during game)
-    3 : 02/03/03 : map restoration was done too early, now fixed
-                   \mfr didn't always set ts to 1; fixed
-                   included E M H maps for easily starting new games
-                   escape() now used on s:restoremap prior to execution
-                   g:mines_timer  (by default enabled) if true applies
-                   time-limit
-    2 : 01/31/03 : now intercepts attempts to restore a quit game
-                   quit games' s:minebufnum is now unlet
-
-=============================================================================
-vim:tw=78:ts=8:ft=help
