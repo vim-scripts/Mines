@@ -1,7 +1,7 @@
 " Mines.vim: emulates a minefield
 "   Author:		Charles E. Campbell, Jr.
-"   Date:		Jan 06, 2006
-"   Version:	13
+"   Date:		Jun 27, 2006
+"   Version:	14
 " Copyright:    Copyright (C) 1999-2005 Charles E. Campbell, Jr. {{{1
 "               Permission is hereby granted to use and distribute this code,
 "               with or without modifications, provided that this copyright
@@ -22,9 +22,10 @@
 if &cp || exists("g:loaded_Mines")
  finish
 endif
-let g:loaded_Mines = "v13"
+let g:loaded_Mines = "v14"
 let s:keepcpo      = &cpo
 set cpo&vim
+"DechoTabOn
 
 " ---------------------------------------------------------------------
 "  Mining Variables: {{{1
@@ -77,8 +78,8 @@ nmap <silent> <script> <Plug>SaveStatistics	:set lz<CR>:call <SID>SaveStatistics
 
 " ---------------------------------------------------------------------
 " EasyMines: {{{2
-"    Requires an 12x12 grid be displayable
-fun! <SID>EasyMines()
+"    Requires an 12x12 grid be displayable with 15% mines
+fun! s:EasyMines()
 "  let g:decho_hide= 1  "Decho
 "  call Dfunc("EasyMines()")
   if s:SanityCheck()|return|endif
@@ -93,8 +94,8 @@ endfun
 
 " ---------------------------------------------------------------------
 " MedMines: {{{2
-"    Requires a 24x24 grid be displayable
-fun! <SID>MedMines()
+"    Requires a 20x20 grid be displayable with 15% mines
+fun! s:MedMines()
 "  let g:decho_hide= 1  "Decho
 "  call Dfunc("MedMines()")
   if s:SanityCheck()|return|endif
@@ -103,14 +104,14 @@ fun! <SID>MedMines()
   let m2      = g:rndm_m2 + (localtime()/86400)%100
   let m3      = g:rndm_m3 + (localtime()/3600)%100
   call RndmInit(m1,m2,m3)
-  call MineFieldSettings(22,22,20*22*22/100,240)
+  call MineFieldSettings(18,18,15*22*22/100,240)
 "  call Dret("MedMines")
 endfun
 
 " ---------------------------------------------------------------------
 " HardMines: {{{2{
-"    Requies a 50x50 grid be displayable
-fun! <SID>HardMines()
+"    Requies a 50x50 grid be displayable with 18% mines
+fun! s:HardMines()
 "  let g:decho_hide= 1  "Decho
 "  call Dfunc("HardMines()")
   if s:SanityCheck()|return|endif
@@ -119,7 +120,7 @@ fun! <SID>HardMines()
   let m2      = g:rndm_m2 + (localtime()/86400)%100
   let m3      = g:rndm_m3 + (localtime()/3600)%100
   call RndmInit(m1,m2,m3)
-  call MineFieldSettings(48,48,20*48*48/100,480)
+  call MineFieldSettings(48,48,18*48*48/100,480)
 "  call Dret("HardMines")
 endfun
 
@@ -155,12 +156,15 @@ fun! MineFieldSettings(rows,cols,mines,timelapse)
   let s:MFcols    = a:cols
   let s:MFmines   = a:mines
   let s:MFmaxtime = a:timelapse
-  call s:MFSyntax()
   if s:MFmines >= s:MFrows*s:MFcols*2/3
    echoerr "Too many mines selected"
   else
-   call s:InitMines()
+   if s:InitMines()
+"    call Dret("MineFieldSettings")
+    return
+   endif
   endif
+  call s:MFSyntax()
   let s:timestart    = localtime()
   let s:timestop     = 0
   let s:timesuspended= 0
@@ -173,14 +177,26 @@ endfun
 
 " ---------------------------------------------------------------------
 " InitMines: {{{2
-fun! <SID>InitMines()
+fun! s:InitMines()
 "  call Dfunc("InitMines(".s:MFrows."x".s:MFcols." mines=".s:MFmines.")")
+  if filereadable("-Mines-")
+   redraw!
+   echohl WarningMsg | echo "the <-Mines-> file already exists!" | echohl None
+   sleep 2
+"   call Dret("InitMines")
+   return 1
+  endif
 
   call s:DisplayMines(1)
   call s:ToggleMineTimer(g:mines_timer)
 
-  let s:keep_list= &list
-  set nolist
+  let s:keep_list   = &list
+  let s:keep_gd     = &gd
+  let s:keep_go     = &go
+  let s:keep_fo     = &fo
+  let s:keep_report = &report
+  set nolist go-=aA fo-=a nogd report=10000
+
   " draw grid
 "  call Decho("draw grid")
   let col= 1
@@ -258,17 +274,19 @@ fun! <SID>InitMines()
    endwhile
    let row = row + 1
   endwhile
+  augroup AuMinesTimer
+   au!
+  augroup END
 
   if g:mines_timer
    augroup AuMinesTimer
-    au!
     au CursorHold * call s:TimeLapse()
    augroup END
   endif
   let s:utkeep= &ut
   set ut=100
   augroup AuMinesTimer
-   au CursorHold * call s:MFSyntax()
+   au ColorScheme -Mines- call s:MFSyntax()
   augroup END
 
   " title and author stuff
@@ -276,15 +294,45 @@ fun! <SID>InitMines()
   exe "norm! jA           M I N E S"
   exe "norm! jA    by Charles E. Campbell"
 
+  nmap <buffer> 0		:exe 'norm! 0l\n'<cr>
+  nmap <buffer> $		:exe 'norm! 0f:h\n'<cr>
+  nmap <buffer> G		:exe 'norm! Gk\n'<cr>
+  nmap <buffer> g		:exe 'norm! ggj\n'<cr>
+  nmap <buffer> c		:call <SID>ChgCorner()<cr>
+  set nomod
+
   " place cursor in upper left-hand corner of minefield
   call cursor(2,2)
 
 "  call Dret("InitMines")
+  return 0
+endfun
+
+" ---------------------------------------------------------------------
+" ChgCorner: {{{2
+fun! s:ChgCorner()
+"  call Dfunc("ChgCorner()")
+  let row = line(".")
+  let col = col(".")
+  if row < s:MFrows/2
+   if col < s:MFcols/2
+   	norm! Gk0l
+   else
+   	norm! 1G0jl
+   endif
+  else
+   if col < s:MFcols/2
+   	norm! Gk0f:h
+   else
+   	norm! 1Gj0f:h
+   endif
+  endif
+"  call Dret("ChgCorner")
 endfun
 
 " ---------------------------------------------------------------------
 " ColLimit: {{{2
-fun! <SID>ColLimit(col)
+fun! s:ColLimit(col)
 "  call Dfunc("ColLimit(col=".a:col.")")
   let col= a:col
   if col <= 0
@@ -299,7 +347,7 @@ endfun
 
 " ---------------------------------------------------------------------
 " RowLimit: {{{2
-fun! <SID>RowLimit(row)
+fun! s:RowLimit(row)
 "  call Dfunc("RowLimit(row=".a:row.")")
   let row= a:row
   if row <= 0
@@ -316,7 +364,7 @@ endfun
 " DrawMinefield: {{{2
 "     This function is responsible for drawing the minefield
 "     as the mouse is clicked
-fun! <SID>DrawMinefield()
+fun! s:DrawMinefield()
 "  call Dfunc("DrawMinefield()")
   let col   = col(".")
   let row   = line(".")
@@ -350,7 +398,7 @@ endfun
 " DrawMineflag: {{{2
 "    This function is responsible for drawing the minefield
 "    flags as the rightmouse is clicked
-fun! <SID>DrawMineflag()
+fun! s:DrawMineflag()
 "  call Dfunc("DrawMineflag()")
   let scol   = col(".")
   let srow   = line(".")
@@ -362,12 +410,14 @@ fun! <SID>DrawMineflag()
 
   " sanity check
   if fcol <= 0 || s:MFcols < fcol
+   call s:FlagCounter()
 "   call Dret("DrawMineflag")
    return
   endif
 
   " sanity check
   if frow <= 0 || s:MFrows < frow
+   call s:FlagCounter()
 "   call Dret("DrawMineflag")
    return
   endif
@@ -380,11 +430,13 @@ fun! <SID>DrawMineflag()
    if " ".s:MF_{frow}_{fcol} == ' *'
 	let s:bombsflagged= s:bombsflagged - 1
    endif
+   call s:FlagCounter()
 "   call Dret("DrawMineflag")
    return
   endif
   if @@ =~ '\d' || @@ == ' '
    " don't change numbered entries or no-bomb areas
+   call s:FlagCounter()
 "   call Dret("DrawMineflag")
    return
   endif
@@ -392,7 +444,7 @@ fun! <SID>DrawMineflag()
 "  call Decho("DrawMineflag: ".frow.",".fcol." <".s:MF_{frow}_{fcol}.">")
   if 1 <= frow && frow <= s:MFrows && 1 <= fcol && fcol <= s:MFcols
    if " ".s:MF_{frow}_{fcol} == ' *'
-    let s:flagsused    = s:flagsused + 1
+    let s:flagsused    = s:flagsused    + 1
     let s:bombsflagged = s:bombsflagged + 1
    else
     let s:flagsused= s:flagsused + 1
@@ -405,7 +457,7 @@ fun! <SID>DrawMineflag()
   if s:MFmines == s:flagsused && s:MFmines == s:bombsflagged && s:marked == s:nobombs
    call s:MF_Happy()
   endif
-  set nomod
+  call s:FlagCounter()
 "  call Dret("DrawMineflag")
 endfun
 
@@ -542,7 +594,7 @@ endfun
 " ---------------------------------------------------------------------
 " MFSyntax: {{{2
 "   Set up syntax highlighting for minefield
-fun! <SID>MFSyntax()
+fun! s:MFSyntax()
 "  call Dfunc("MFSyntax()")
 
   syn clear
@@ -560,19 +612,20 @@ fun! <SID>MFSyntax()
   syn match MinefieldTab	"	"
   syn match MinefieldSpace	" "
   syn match MinefieldBomb	'[*X]'
-  syn region MinefieldText	matchgroup=MinefieldBg start="\s\+\zeTime"		end="$"
-  syn region MinefieldText	matchgroup=MinefieldBg start="\s\+\zeBombs"		end="$"
-  syn region MinefieldText	matchgroup=MinefieldBg start="\s\+\zeFlags"		end="$"
-  syn region MinefieldText	matchgroup=MinefieldBg start="\s\+\zeBOOM"		end="$"
-  syn region MinefieldText	matchgroup=MinefieldBg start="\s\+\zetotal"		end="$"
-  syn region MinefieldText	matchgroup=MinefieldBg start="\s\+\zestreak"	end="$"
-  syn region MinefieldText	matchgroup=MinefieldBg start="\s\+\zelongest"	end="$"
-  syn region MinefieldText	matchgroup=MinefieldBg start="\s\+\zecurrent"	end="$"
-  syn region MinefieldText	matchgroup=MinefieldBg start="\s\+\zebest"		end="$"
-  syn region MinefieldMinnie	matchgroup=MinefieldBg start="\s\+\ze[-,/\\)o|]"	end="$" contains=MinefieldWinner keepend
-  syn region MinefieldWinner	matchgroup=MinefieldBg start="\s\+\ze\(YOU\|WON\|!!!\)" end="$" keepend
-  syn region MinefieldTitle	matchgroup=MinefieldBg start="\s\+\zeM I N E S\>"	end="$"
-  syn region MinefieldTitle	matchgroup=MinefieldBg start="\s\+\zeby Charles"	end="$"
+  syn region MinefieldText    matchgroup=MinefieldBg start="\s\+\zeTime"		end="$"
+  syn region MinefieldText    matchgroup=MinefieldBg start="\s\+\zeBombs"		end="$"
+  syn region MinefieldText    matchgroup=MinefieldBg start="\s\+\zeFlags"		end="$"
+  syn region MinefieldText    matchgroup=MinefieldBg start="\s\+\zeBOOM"		end="$"
+  syn region MinefieldText    matchgroup=MinefieldBg start="\s\+\zetotal"		end="$"
+  syn region MinefieldText    matchgroup=MinefieldBg start="\s\+\zestreak"	end="$"
+  syn region MinefieldText    matchgroup=MinefieldBg start="\s\+\zelongest"	end="$"
+  syn region MinefieldText    matchgroup=MinefieldBg start="\s\+\zecurrent"	end="$"
+  syn region MinefieldText    matchgroup=MinefieldBg start="\s\+\zebest"		end="$"
+  syn region MinefieldMinnie  matchgroup=MinefieldBg start="\s\+\ze[-,/\\)o|]"	end="$" contains=MinefieldWinner keepend
+  syn region MinefieldWinner  matchgroup=MinefieldBg start="\s\+\ze\(YOU\|WON\|!!!\)" end="$" keepend
+  syn region MinefieldTitle	  matchgroup=MinefieldBg start="\s\+\zeM I N E S\>"	end="$"
+  syn region MinefieldTitle	  matchgroup=MinefieldBg start="\s\+\zeby Charles"	end="$"
+  syn region MinefieldFlagCnt matchgroup=MinefieldBg start="\s\+\zeFlags Used: " end="$"
   if &bg == "dark"
    hi Minefield0		 ctermfg=black   guifg=black    ctermbg=black   guibg=black    term=NONE cterm=NONE gui=NONE
    hi Minefield1		 ctermfg=green   guifg=green    ctermbg=black   guibg=black    term=NONE cterm=NONE gui=NONE
@@ -619,7 +672,7 @@ endfun
 " ---------------------------------------------------------------------
 " DisplayMines: {{{2
 "    Displays a Minefield and sets up Minefield mappings
-fun! <SID>DisplayMines(init)
+fun! s:DisplayMines(init)
 "  call Dfunc("DisplayMines(init=".a:init.")")
 
   " Settings
@@ -692,7 +745,7 @@ endfun
 "            The screen is restored to its pre-Mines condition
 "         StopMines(0) -- really quits Mines
 "         StopMines(1) -- suspends Mines
-fun! <SID>StopMines(suspend)
+fun! s:StopMines(suspend)
 "  call Dfunc("StopMines(suspend=".a:suspend.")")
 
   call s:ToggleMineTimer(0)
@@ -703,10 +756,16 @@ fun! <SID>StopMines(suspend)
     exe "bw! ".s:minebufnum
     unlet s:minebufnum
    endif
+
    let &hidden   = s:keep_hidden
    let &mouse    = s:keep_mouse
    let &gdefault = s:keep_gdefault
    let &list     = s:keep_list
+   let &go       = s:keep_go
+   let &fo       = s:keep_fo
+   let &gd       = s:keep_gd
+   let &report   = s:keep_report
+
    " restore display based on savesession
    exe "source ".s:savesession
    call delete(s:savesession)
@@ -714,10 +773,13 @@ fun! <SID>StopMines(suspend)
    " suspend  Mines
    exe "b ".s:keep_bufnum
    " restore display based on savesession
-   exe "source ".s:savesession
+   exe "silent! source ".s:savesession
   endif
 
   " restore any pre-existing to <Mines.vim> maps
+  if !exists("b:netrw_curdir")
+   let b:netrw_curdir= getcwd()
+  endif
   call RestoreUserMaps("Mines")
   let s:timestop= localtime()
 
@@ -752,7 +814,7 @@ endfun
 " ---------------------------------------------------------------------
 " ShowAt: {{{2
 "    This function displays the Minefield at the given row,column
-fun! <SID>ShowAt(row,col)
+fun! s:ShowAt(row,col)
 "  call Dfunc("ShowAt(".a:row.",".a:col."): MF=".s:MF_{a:row}_{a:col})
 
   if " ".s:MF_{a:row}_{a:col} == ' 0'
@@ -773,7 +835,7 @@ endfun
 " CheckIfFlagged: {{{2
 "    When marking a square, this function keeps track of
 "    how many squares are flagged and how many are marked
-fun! <SID>CheckIfFlagged()
+fun! s:CheckIfFlagged()
 "  call Dfunc("CheckIfFlagged()")
 
   norm! vy
@@ -788,11 +850,23 @@ fun! <SID>CheckIfFlagged()
 endfun
 
 " ---------------------------------------------------------------------
+" FlagCounter: show count of flags{{{2
+fun! s:FlagCounter()
+"  call Dfunc("FlagCounter()")
+  let curpos    = getpos(".")
+  call cursor(5,13)
+  exe "norm! DA".(printf("    Flags Used: %d",s:flagsused))
+  call setpos(".",curpos)
+  set nomod
+"  call Dret("FlagCounter")
+endfun
+
+" ---------------------------------------------------------------------
 " MF_Flood: {{{2
 "    Fills in 0-minefield count area
 "      frow,fcol: mine-f-ield row and column
 "      col1,col2: index into minefield array from 0..0 (ie. not [1-8])
-fun! <SID>MF_Flood(frow,fcol)
+fun! s:MF_Flood(frow,fcol)
 "  call Dfunc("MF_Flood(frow=".a:frow.",fcol=".a:fcol.")")
 
   redr!
@@ -815,7 +889,7 @@ endfun
 
 " ---------------------------------------------------------------------
 "  MF_FillLeft: {{{2
-fun! <SID>MF_FillLeft(frow,fcol)
+fun! s:MF_FillLeft(frow,fcol)
 "  call Dfunc("MF_FillLeft(frow=".a:frow.",fcol=".a:fcol.")")
 
   if s:MF_Posn(a:frow,a:fcol)
@@ -850,7 +924,7 @@ endfun
 
 " ---------------------------------------------------------------------
 "  MF_FillRight: {{{2
-fun! <SID>MF_FillRight(frow,fcol)
+fun! s:MF_FillRight(frow,fcol)
 "  call Dfunc("MF_FillRight(frow=".a:frow.",fcol=".a:fcol.")")
 
   if s:MF_Posn(a:frow,a:fcol)
@@ -885,7 +959,7 @@ endfun
 
 " ---------------------------------------------------------------------
 "  MF_FillRun: {{{2
-fun! <SID>MF_FillRun(frow,fcolL,fcolR)
+fun! s:MF_FillRun(frow,fcolL,fcolR)
 "  call Dfunc("MF_FillRun(frow=".a:frow.",fcol[".a:fcolL.",".a:fcolR."])")
 
   if s:MF_Posn(a:frow,a:fcolL)
@@ -924,7 +998,7 @@ endfun
 "       srow,scol: -s-creen    row and column
 "      Returns  1 : failed sanity check
 "               0 : otherwise
-fun! <SID>MF_Posn(frow,fcol)
+fun! s:MF_Posn(frow,fcol)
 "  call Dfunc("MF_Posn(frow=".a:frow.",fcol=".a:fcol.")")
 
   " sanity checks
@@ -947,7 +1021,7 @@ endfun
 " ---------------------------------------------------------------------
 " MF_Happy: {{{2
 "    Minnie does a cartwheel when you win
-fun! <SID>MF_Happy()
+fun! s:MF_Happy()
 "  call Dfunc("MF_Happy()")
 
   " clean off right-hand side of minefield
@@ -1016,6 +1090,11 @@ fun! <SID>MF_Happy()
   exe "norm! j0f:lDA             /\\    !!!"
   redr
 
+  " clear off "Flags Used: ..." field
+  call cursor(5,13)
+  norm! Dk$
+  redr
+
   exe "norm! jjA  Time  Used   : ".s:timelapse."sec"
   exe "norm! jA  Bombs Flagged: ".s:MFmines
 
@@ -1033,7 +1112,7 @@ endfun
 
 " ---------------------------------------------------------------------
 " Winners: checks top winners in the $HOME directory {{{2
-fun! <SID>Winners(winner)
+fun! s:Winners(winner)
 "  call Dfunc("Winners(winner=".a:winner.")")
 
   if $HOME == ""
@@ -1059,11 +1138,12 @@ fun! <SID>Winners(winner)
   " report on statistics
   norm! j
   if g:mines_losecnt{s:field} > 0
-   let percent= (10000*g:mines_wincnt{s:field})/g:mines_losecnt{s:field}
+   let totgames= g:mines_wincnt{s:field} + g:mines_losecnt{s:field}
+   let percent= (10000*g:mines_wincnt{s:field})/totgames
    let percent= (percent + 5)/10
    let tenth   = percent % 10
    let percent = (percent - tenth)/10
-   exe  "norm! j$lA  totals         : [".g:mines_wincnt{s:field}." wins]/[".g:mines_losecnt{s:field}." losses]=".percent.'.'.tenth."%"
+   exe  "norm! j$lA  totals         : [".g:mines_wincnt{s:field}." wins]/[".totgames." games]=".percent.'.'.tenth."%"
   else
    exe  "norm! j$lA  totals         : ".g:mines_wincnt{s:field}." wins, ".g:mines_losecnt{s:field}." losses"
   endif
@@ -1095,7 +1175,7 @@ endfun
 
 " ---------------------------------------------------------------------
 " UpdateStatistics: {{{2
-fun! <SID>UpdateStatistics(winner)
+fun! s:UpdateStatistics(winner)
 "  call Dfunc("UpdateStatistics(winner<".a:winner.">) s:field<".s:field.">")
 
   " update statistics

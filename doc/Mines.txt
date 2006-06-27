@@ -1,4 +1,4 @@
-*Mines.txt*	The Mines Game 				Dec 28, 2005
+*Mines.txt*	The Mines Game 				Jun 26, 2006
 
 Author:  Charles E. Campbell, Jr.  <NdrOchip@ScampbellPfamily.AbizM>
 	  (remove NOSPAM from the email address first)
@@ -62,13 +62,17 @@ what's there, or maybe to go BOOM!) or to click with the rightmouse to flag
 what you think is a mine.
 
      -Play-						*mines-play*
-        x   move the cursor around the field;
-            pressing x is just like pressing a
-            <leftmouse> -- find out what's
-            hidden!
+        x  move the cursor around the field;
+           pressing x is just like pressing a
+           <leftmouse> -- find out what's
+           hidden!
+        f  just like the <rightmouse>, flag what's under the cursor as a mine
+        0  goes to leftmost  position inside minefield
+        $  goes to rightmost position inside minefield
+        gg goes to uppermost position inside minefield
+        G  goes to bttommost position inside minefield
 
-        f   just like the <rightmouse>, flag
-            what's under the cursor as a mine
+
 
      -Control-						*mines-control*
         C   clear statistics (only while a game is showing)
@@ -104,15 +108,15 @@ close your eyes!
 	x   find out what's in the space
 
 	 Pattern         Can Safely Do         Pattern         Can Safely Do
-         ooooo             ooooo                                            
-         oo3oo             oo3oo             	oooo              oooo 
-	                    fff              	111o              111o 
-                                             	                    x  
+         ooooo             ooooo
+         oo3oo             oo3oo             	oooo              oooo
+	                    fff              	111o              111o
+                                             	                    x
 
-	+-----             +-----                                           
-	|ooo               |ooo              	oooo              oooo 
-	|22o..             |22o..            	122o              122o 
-	|??                |ffx              	                    f  
+	+-----             +-----
+	|ooo               |ooo              	oooo              oooo
+	|22o..             |22o..            	122o              122o
+	|??                |ffx              	                    f
 
 
 	 ooooo            ooooo
@@ -121,44 +125,52 @@ close your eyes!
 
 
 =============================================================================
-2. History:						*mines-history*
+2. History:						*mines-history* {{{1
 
+   14 : 06/26/06   * added "Flags Used" field while playing
+	06/16/06   * pressing "c" changes corner
+		   * pressing 0  goes to leftmost  position inside minefield
+		   * pressing $  goes to rightmost position inside minefield
+		   * pressing gg goes to uppermost position inside minefield
+		   * pressing G  goes to bttommost position inside minefield
+	05/16/06   * medium is now 15% mines, hard is 18% mines
+		   * medium now uses an 18x18 grid
    13 : 01/06/06 : * the percentage wins is now shown to tenths
 	12/28/05   * now uses cecutil to save/restore user maps
    12 : 05/23/05   * Mines will issue a message that Rndm is missing
 		     (and where to get it) when Rndm is missing
 	01/05/06   * Mines' win message now includes percentage of wins
    11 : 08/02/04 : * an X will now mark the bomb that went off
-                   * bugfix: an "f" on a previously determined site
+		   * bugfix: an "f" on a previously determined site
 		     (whether numbered or blank) will now have no effect
 		   * flipped the cterm=NONE and fg/bg specs about; some
 		     machines were showing all bold which equated to one
 		     color.
    10 : 07/28/04 : * updatetime now 200ms, affects time-left display when
-                     g:mines_timer is true.  Restored after game finished.
-                   * longest winning/losing streaks now computed&displayed
-                   * statistics now kept separately for each field size
+		     g:mines_timer is true.  Restored after game finished.
+		   * longest winning/losing streaks now computed&displayed
+		   * statistics now kept separately for each field size
 		   * now includes a title
 		   * CursorHold used to fix highlighting after a
 		     colorscheme change
     9 : 06/28/04 : * Mines now handles light as well as dark backgrounds
     8 : 06/15/04 : * improved look of Minnie at the end
-                   * total/streak win/loss statistics
+		   * total/streak win/loss statistics
     7 : 12/08/03 : changed a norm to norm! to avoid <c-y> mapping
     6 : 10/16/03 : includes help
     5 : 05/08/03 : adjusted Med/Hard to be 20% mines
     4 : 02/03/03 : \mft toggles g:mines_timer
-                   colons lined up for Happy()
-                   multiple x hits after a Minnie repeated Minnie - fixed
-                   saves/restores gdefault (turns it to nogd during game)
+		   colons lined up for Happy()
+		   multiple x hits after a Minnie repeated Minnie - fixed
+		   saves/restores gdefault (turns it to nogd during game)
     3 : 02/03/03 : map restoration was done too early, now fixed
-                   \mfr didn't always set ts to 1; fixed
-                   included E M H maps for easily starting new games
-                   escape() now used on s:restoremap prior to execution
-                   g:mines_timer  (by default enabled) if true applies
-                   time-limit
+		   \mfr didn't always set ts to 1; fixed
+		   included E M H maps for easily starting new games
+		   escape() now used on s:restoremap prior to execution
+		   g:mines_timer  (by default enabled) if true applies
+		   time-limit
     2 : 01/31/03 : now intercepts attempts to restore a quit game
-                   quit games' s:minebufnum is now unlet
+		   quit games' s:minebufnum is now unlet
 
 =============================================================================
-vim:tw=78:ts=8:ft=help
+vim:tw=78:ts=8:ft=help:fdm=marker
