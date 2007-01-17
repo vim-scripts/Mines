@@ -127,6 +127,15 @@ close your eyes!
 =============================================================================
 2. History:						*mines-history* {{{1
 
+   15 : 06/28/06   * now includes cecutil.vim as part of its distribution
+                   * when game is over, if -Mines- exists, it will be deleted
+		   * "Flags Used" field was misplaced for Medium and Hard
+		     games; fixed.
+		   * a "redr!" for debugging was inadvertently left in,
+		     causing flickering floods.  Fixed.
+	08/10/06   * included "Time Used" field during play
+	12/28/06   * at end-of-game, when one hits a mine, mistakenly flagged
+	             squares are shown with truth with blue background
    14 : 06/26/06   * added "Flags Used" field while playing
 	06/16/06   * pressing "c" changes corner
 		   * pressing 0  goes to leftmost  position inside minefield

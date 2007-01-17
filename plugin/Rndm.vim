@@ -1,7 +1,7 @@
 " Rndm:
 "  Author:  Charles E. Campbell, Jr.
-"  Date:    Aug 09, 2005
-"  Version: 4b	ASTRO-ONLY
+"  Date:    Dec 21, 2006
+"  Version: 4c	ASTRO-ONLY
 "
 "  Discussion:  algorithm developed at MIT
 "
@@ -15,13 +15,17 @@
 "                     on the interval [a,b]
 " Dice(qty,sides)   : emulates a variate from sum of "qty" user-specified
 "                     dice, each of which can take on values [1,sides]
+"
+"Col 2:8: Be careful that you don't let anyone rob you through his philosophy
+"         and vain deceit, after the tradition of men, after the elements of
+"         the world, and not after Christ.
 
 " ---------------------------------------------------------------------
 "  Load Once: {{{1
 if &cp || exists("loaded_Rndm")
  finish
 endif
-let g:loaded_Rndm = "v4b"
+let g:loaded_Rndm = "v4c"
 let s:keepcpo     = &cpo
 set cpo&vim
 

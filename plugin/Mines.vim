@@ -1,7 +1,7 @@
 " Mines.vim: emulates a minefield
 "   Author:		Charles E. Campbell, Jr.
-"   Date:		Jun 27, 2006
-"   Version:	14
+"   Date:		Jan 17, 2007
+"   Version:	15
 " Copyright:    Copyright (C) 1999-2005 Charles E. Campbell, Jr. {{{1
 "               Permission is hereby granted to use and distribute this code,
 "               with or without modifications, provided that this copyright
@@ -22,7 +22,7 @@
 if &cp || exists("g:loaded_Mines")
  finish
 endif
-let g:loaded_Mines = "v14"
+let g:loaded_Mines = "v15"
 let s:keepcpo      = &cpo
 set cpo&vim
 "DechoTabOn
@@ -456,8 +456,9 @@ fun! s:DrawMineflag()
 "  call Decho("DrawMineflag: flagsused=".s:flagsused." bombsflagged=".s:bombsflagged." marked=".s:marked)
   if s:MFmines == s:flagsused && s:MFmines == s:bombsflagged && s:marked == s:nobombs
    call s:MF_Happy()
+  else
+   call s:FlagCounter()
   endif
-  call s:FlagCounter()
 "  call Dret("DrawMineflag")
 endfun
 
@@ -534,6 +535,11 @@ endfun
 fun! s:Boom()
 "  call Dfunc("Boom()")
 
+  " delete the -Mines- file if it exists
+  if filereadable("-Mines-")
+   call delete("-Mines-")
+  endif
+
   " clean off right-hand side of minefield
   %s/^:.\{-}:\zs.*$//e
 
@@ -569,10 +575,21 @@ fun! s:Boom()
   11
   let row= 1
   norm! gg0jl
+
+  " show true minefield
   while row <= s:MFrows
    let col = 1
    let line= ""
    while col <= s:MFcols
+
+   	" show mistakes with Boomfield# syntax highlighting COMBAK
+	let rcchar= getline(row+1)[col]
+"	call Decho("MF[".row."][".col."]<".s:MF_{row}_{col}."> getline(".(row+1).")[".col."]<".rcchar.">")
+	if rcchar != '\t' && rcchar == 'f' && s:MF_{row}_{col} > 0
+	 exe 'syn match Boomfield'.s:MF_{row}_{col}." '\\%".(row+1)."l\\%".(col+1)."c.'"
+"	 call Decho('exe syn match Boomfield'.s:MF_{row}_{col}." '\\%".(row+1)."l\\%".(col+1)."c.'")
+	endif
+
 	if " ".s:MF_{row}_{col} == " z" || " ".s:MF_{row}_{col} == ' 0'
 	 let line= line.' '
 	else
@@ -585,6 +602,7 @@ fun! s:Boom()
    let row = row + 1
    norm! j0l
   endwhile
+
   norm! gg0
   exe "norm! ".curline."G".curcol."\<bar>"
 
@@ -613,6 +631,7 @@ fun! s:MFSyntax()
   syn match MinefieldSpace	" "
   syn match MinefieldBomb	'[*X]'
   syn region MinefieldText    matchgroup=MinefieldBg start="\s\+\zeTime"		end="$"
+  syn region MinefieldTime    start="\s\+\zeTime Used"		end="$"
   syn region MinefieldText    matchgroup=MinefieldBg start="\s\+\zeBombs"		end="$"
   syn region MinefieldText    matchgroup=MinefieldBg start="\s\+\zeFlags"		end="$"
   syn region MinefieldText    matchgroup=MinefieldBg start="\s\+\zeBOOM"		end="$"
@@ -634,8 +653,17 @@ fun! s:MFSyntax()
    hi Minefield4		 ctermfg=cyan    guifg=cyan     ctermbg=black   guibg=black    term=NONE cterm=NONE gui=NONE
    hi Minefield5		 ctermfg=green   guifg=green    ctermbg=blue    guibg=blue     term=NONE cterm=NONE gui=NONE
    hi Minefield6		 ctermfg=yellow  guifg=yellow   ctermbg=blue    guibg=blue     term=NONE cterm=NONE gui=NONE
-   hi Minefield7		 ctermfg=red     guifg=red	     ctermbg=blue    guibg=blue    term=NONE cterm=NONE gui=NONE
+   hi Minefield7		 ctermfg=red     guifg=red	    ctermbg=blue    guibg=blue     term=NONE cterm=NONE gui=NONE
    hi Minefield8		 ctermfg=cyan    guifg=cyan     ctermbg=blue    guibg=blue     term=NONE cterm=NONE gui=NONE
+   hi Boomfield0		 ctermfg=black   guifg=black    ctermbg=blue    guibg=blue     term=NONE cterm=NONE gui=NONE
+   hi Boomfield1		 ctermfg=green   guifg=green    ctermbg=blue    guibg=blue     term=NONE cterm=NONE gui=NONE
+   hi Boomfield2		 ctermfg=yellow  guifg=yellow   ctermbg=blue    guibg=blue     term=NONE cterm=NONE gui=NONE
+   hi Boomfield3		 ctermfg=red     guifg=red      ctermbg=blue    guibg=blue     term=NONE cterm=NONE gui=NONE
+   hi Boomfield4		 ctermfg=cyan    guifg=cyan     ctermbg=blue    guibg=blue     term=NONE cterm=NONE gui=NONE
+   hi Boomfield5		 ctermfg=green   guifg=green    ctermbg=blue    guibg=blue     term=NONE cterm=NONE gui=NONE
+   hi Boomfield6		 ctermfg=yellow  guifg=yellow   ctermbg=blue    guibg=blue     term=NONE cterm=NONE gui=NONE
+   hi Boomfield7		 ctermfg=red     guifg=red	    ctermbg=blue    guibg=blue     term=NONE cterm=NONE gui=NONE
+   hi Boomfield8		 ctermfg=cyan    guifg=cyan     ctermbg=blue    guibg=blue     term=NONE cterm=NONE gui=NONE
    hi MinefieldTab		 ctermfg=blue    guifg=blue     ctermbg=blue    guibg=blue     term=NONE cterm=NONE gui=NONE
    hi MinefieldRim		 ctermfg=white   guifg=white    ctermbg=white   guibg=white    term=NONE cterm=NONE gui=NONE
    hi MinefieldFlag		 ctermfg=white   guifg=white    ctermbg=magenta guibg=magenta  term=NONE cterm=NONE gui=NONE
@@ -654,6 +682,15 @@ fun! s:MFSyntax()
    hi Minefield6		 ctermfg=yellow  guifg=yellow   ctermbg=blue    guibg=blue      term=NONE cterm=NONE gui=NONE
    hi Minefield7		 ctermfg=red     guifg=red	    ctermbg=blue    guibg=blue      term=NONE cterm=NONE gui=NONE
    hi Minefield8		 ctermfg=cyan    guifg=cyan     ctermbg=blue    guibg=blue      term=NONE cterm=NONE gui=NONE
+   hi Boomfield0		 ctermfg=black   guifg=black    ctermbg=blue    guibg=blue      term=NONE cterm=NONE gui=NONE
+   hi Boomfield1		 ctermfg=green   guifg=green    ctermbg=blue    guibg=blue      term=NONE cterm=NONE gui=NONE
+   hi Boomfield2		 ctermfg=yellow  guifg=yellow   ctermbg=blue    guibg=blue      term=NONE cterm=NONE gui=NONE
+   hi Boomfield3		 ctermfg=red     guifg=red      ctermbg=blue    guibg=blue      term=NONE cterm=NONE gui=NONE
+   hi Boomfield4		 ctermfg=cyan    guifg=cyan     ctermbg=blue    guibg=blue      term=NONE cterm=NONE gui=NONE
+   hi Boomfield5		 ctermfg=green   guifg=green    ctermbg=blue    guibg=blue      term=NONE cterm=NONE gui=NONE
+   hi Boomfield6		 ctermfg=yellow  guifg=yellow   ctermbg=blue    guibg=blue      term=NONE cterm=NONE gui=NONE
+   hi Boomfield7		 ctermfg=red     guifg=red	    ctermbg=blue    guibg=blue      term=NONE cterm=NONE gui=NONE
+   hi Boomfield8		 ctermfg=cyan    guifg=cyan     ctermbg=blue    guibg=blue      term=NONE cterm=NONE gui=NONE
    hi MinefieldTab		 ctermfg=blue    guifg=blue     ctermbg=blue    guibg=blue      term=NONE cterm=NONE gui=NONE
    hi MinefieldRim		 ctermfg=magenta guifg=magenta  ctermbg=magenta guibg=magenta   term=NONE cterm=NONE gui=NONE
    hi MinefieldFlag		 ctermfg=white   guifg=white    ctermbg=magenta guibg=magenta   term=NONE cterm=NONE gui=NONE
@@ -751,12 +788,25 @@ fun! s:StopMines(suspend)
   call s:ToggleMineTimer(0)
   if a:suspend == 0
    " quit Mines
+"   call Decho("quitting Mines")
+
+   " restore display based on savesession
+"   call Decho("restoring display based on savesession<".s:savesession.">")
+   try
+    exe "source ".s:savesession
+   catch /^Vim\%((\a\+)\)\=:E/
+"   	call Decho("intercepted error ".v:errmsg)
+   endtry
+   call delete(s:savesession)
+
    set nohidden
    if exists("s:minebufnum") && bufname(s:minebufnum) != ""
+"   	call Decho("buffer-wiping ".s:minebufnum)
     exe "bw! ".s:minebufnum
     unlet s:minebufnum
    endif
 
+"   call Decho("restoring options")
    let &hidden   = s:keep_hidden
    let &mouse    = s:keep_mouse
    let &gdefault = s:keep_gdefault
@@ -766,11 +816,9 @@ fun! s:StopMines(suspend)
    let &gd       = s:keep_gd
    let &report   = s:keep_report
 
-   " restore display based on savesession
-   exe "source ".s:savesession
-   call delete(s:savesession)
   else
    " suspend  Mines
+"   call Decho("suspending Mines")
    exe "b ".s:keep_bufnum
    " restore display based on savesession
    exe "silent! source ".s:savesession
@@ -794,10 +842,12 @@ fun! SaveSession(savefile)
   silent! windo w
 
   " Save any pre-existing maps that conflict with <Mines.vim>'s maps
+  " (uses call RestoreUserMaps("Mines") to restore user maps in s:StopMines() )
   call SaveUserMaps("n","","emhxqsf","Mines")
   call SaveUserMaps("n","","<leftmouse>","Mines")
   call SaveUserMaps("n","","<rightmouse>","Mines")
 
+  " save user settings
   let keep_ssop       = &ssop
   let s:keep_hidden   = &hidden
   let s:keep_mouse    = &mouse
@@ -805,6 +855,8 @@ fun! SaveSession(savefile)
   let s:keep_gdefault = &gdefault
   let &ssop           = 'winpos,buffers,slash,globals,resize,blank,folds,help,options,winsize'
   set hidden nogd
+
+  " make a session file and save it in the a:savefile (a temporary file)
   exe 'silent! mksession! '.a:savefile
   let &ssop            = keep_ssop
 
@@ -854,8 +906,11 @@ endfun
 fun! s:FlagCounter()
 "  call Dfunc("FlagCounter()")
   let curpos    = getpos(".")
-  call cursor(5,13)
+  call cursor(5,s:MFcols + 3)
   exe "norm! DA".(printf("    Flags Used: %d",s:flagsused))
+  call cursor(6,s:MFcols + 3)
+  let s:timelapse= localtime() - s:timestart - s:timesuspended
+  exe "norm! DA    Time Used : ".s:timelapse."sec"
   call setpos(".",curpos)
   set nomod
 "  call Dret("FlagCounter")
@@ -869,7 +924,7 @@ endfun
 fun! s:MF_Flood(frow,fcol)
 "  call Dfunc("MF_Flood(frow=".a:frow.",fcol=".a:fcol.")")
 
-  redr!
+"  redr!
   if s:MF_Posn(a:frow,a:fcol)
 "   call Dret("MF_Flood")
    return
@@ -928,7 +983,7 @@ fun! s:MF_FillRight(frow,fcol)
 "  call Dfunc("MF_FillRight(frow=".a:frow.",fcol=".a:fcol.")")
 
   if s:MF_Posn(a:frow,a:fcol)
-"   call Decho("MF_FillRight : fcol=".a:fcol)
+"   call Dret("MF_FillRight : fcol=".a:fcol)
    return a:fcol
   endif
 
@@ -969,7 +1024,7 @@ fun! s:MF_FillRun(frow,fcolL,fcolR)
 
   " Flood
   call s:MF_Posn(a:frow,a:fcolL)
-"  call Decho(s:MFdepth."flood row=".a:frow." col[".a:fcolL.",".a:fcolR."]")
+"  call Decho("flood row=".a:frow." col[".a:fcolL.",".a:fcolR."]")
   let icol= a:fcolL
   while icol <= a:fcolR
    if " ".s:MF_{a:frow}_{icol} == " 0"
@@ -1019,10 +1074,14 @@ fun! s:MF_Posn(frow,fcol)
 endfun
 
 " ---------------------------------------------------------------------
-" MF_Happy: {{{2
-"    Minnie does a cartwheel when you win
+" MF_Happy: Minnie does a cartwheel when you win {{{2
 fun! s:MF_Happy()
 "  call Dfunc("MF_Happy()")
+
+  " delete the -Mines- file if it exists
+  if filereadable("-Mines-")
+   call delete("-Mines-")
+  endif
 
   " clean off right-hand side of minefield
   %s/^:.\{-}:\zs.*$//e
@@ -1037,7 +1096,7 @@ fun! s:MF_Happy()
   let keep_ch   = &ch
   set ch=5
   set lz
-  exe "silent! norm! \<c-u>"
+  exe "silent! norm! z-"
 
   2
   exe "norm! A   o"
