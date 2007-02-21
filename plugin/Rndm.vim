@@ -1,7 +1,7 @@
 " Rndm:
 "  Author:  Charles E. Campbell, Jr.
-"  Date:    Dec 21, 2006
-"  Version: 4c	ASTRO-ONLY
+"  Date:    Feb 20, 2007
+"  Version: 4e	ASTRO-ONLY
 "
 "  Discussion:  algorithm developed at MIT
 "
@@ -25,7 +25,7 @@
 if &cp || exists("loaded_Rndm")
  finish
 endif
-let g:loaded_Rndm = "v4c"
+let g:loaded_Rndm = "v4e"
 let s:keepcpo     = &cpo
 set cpo&vim
 
@@ -38,10 +38,67 @@ let g:rndm_m3 = 52636370 + (localtime()/3600)%100
 
 " ---------------------------------------------------------------------
 " RndmInit: allow user to initialize pseudo-random number generator seeds {{{1
-fun! RndmInit(lm1,lm2,lm3)
-  let g:rndm_m1 = a:lm1
-  let g:rndm_m2 = a:lm2
-  let g:rndm_m3 = a:lm3
+fun! RndmInit(...)
+"  call Dfunc("RndmInit() a:0=".a:0)
+
+  if a:0 >= 3
+   " set seed to specified values
+   let g:rndm_m1 = a:1
+   let g:rndm_m2 = a:2
+   let g:rndm_m3 = a:3
+"   call Decho("set seeds to [".g:rndm_m1.",".g:rndm_m2.",".g:rndm_m3."]")
+
+  elseif filereadable($HOME."/.seed")
+   " initialize the pseudo-random seeds by reading the .seed file
+   " when doing this, one should also save seeds at the end-of-script
+   " by calling RndmSave().
+   let keeplz= &lz
+   let eikeep= &ei
+   set lz ei=all
+
+   1split
+   exe "silent! e ".expand("$HOME")."/.seed"
+   let curbuf= bufnr("%")
+"   call Decho("curbuf=".curbuf." fname<".expand("%").">")
+   silent! s/ /\r/g
+   exe "let g:rndm_m1=".getline(1)
+   exe "let g:rndm_m2=".getline(2)
+   exe "let g:rndm_m3=".getline(3)
+"   call Decho("set seeds to [".g:rndm_m1.",".g:rndm_m2.",".g:rndm_m3."]")
+   silent! q!
+   if bufexists(curbuf)
+    exe curbuf."bw!"
+   endif
+
+   let &lz= keeplz
+   let &ei= eikeep
+  endif
+"  call Dret("RndmInit")
+endfun
+
+" ---------------------------------------------------------------------
+" RndmSave: this function saves the current pseudu-random number seeds {{{2
+fun! RndmSave()
+"  call Dfunc("RndmSave()")
+  if expand("$HOME") != "" && exists("g:rndm_m1") && exists("g:rndm_m2") && exists("g:rndm_m3")
+   let keeplz= &lz
+   let eikeep= &ei
+   set lz ei=all
+
+   1split
+   enew
+   call setline(1,"".g:rndm_m1." ".g:rndm_m2." ".g:rndm_m3)
+   exe "w! ".expand("$HOME")."/.seed"
+   let curbuf= bufnr(".")
+   silent! q!
+   if curbuf > 0
+    exe "silent! ".curbuf."bw!"
+   endif
+
+   let &lz= keeplz
+   let &ei= eikeep
+  endif
+"  call Dret("RndmSave")
 endfun
 
 " ---------------------------------------------------------------------

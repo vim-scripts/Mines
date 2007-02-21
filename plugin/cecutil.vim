@@ -2,8 +2,8 @@
 "               save/restore mark position
 "               save/restore selected user maps
 "  Author:	Charles E. Campbell, Jr.
-"  Version:	16a	ASTRO-ONLY
-"  Date:	Jan 12, 2007
+"  Version:	16b	ASTRO-ONLY
+"  Date:	Feb 12, 2007
 "
 "  Saving Restoring Destroying Marks: {{{1
 "       call SaveMark(markname)       let savemark= SaveMark(markname)
@@ -32,7 +32,7 @@
 if &cp || exists("g:loaded_cecutil")
  finish
 endif
-let g:loaded_cecutil = "v16a"
+let g:loaded_cecutil = "v16b"
 let s:keepcpo        = &cpo
 set cpo&vim
 "DechoVarOn
@@ -394,10 +394,10 @@ fun! SaveUserMaps(mapmode,maplead,mapchx,suffix)
    if amap == "|" || amap == "\<c-v>"
     let amap= "\<c-v>".amap
    endif
+   let amap                    = a:maplead.amap
    let s:restoremap_{a:suffix} = s:restoremap_{a:suffix}."|:silent! ".mapmode."unmap ".amap
    if maparg(amap,mapmode) != ""
-    let maprhs= substitute(maparg(amap,mapmode),'|','<bar>','ge')
-"	let maprhs= substitute(maprhs,'"<CR>',"\<cr>",'ge')
+    let maprhs                  = substitute(maparg(amap,mapmode),'|','<bar>','ge')
    	let s:restoremap_{a:suffix} = s:restoremap_{a:suffix}."|:".mapmode."map ".amap." ".maprhs
    endif
    if dounmap
@@ -412,8 +412,7 @@ fun! SaveUserMaps(mapmode,maplead,mapchx,suffix)
    endif
    let s:restoremap_{a:suffix} = s:restoremap_{a:suffix}."|silent! ".mapmode."unmap ".amap
    if maparg(a:mapchx,mapmode) != ""
-    let maprhs= substitute(maparg(amap,mapmode),'|','<bar>','ge')
-"	let maprhs= substitute(maprhs,'"<CR>',"\<cr>",'ge')
+    let maprhs                  = substitute(maparg(amap,mapmode),'|','<bar>','ge')
    	let s:restoremap_{a:suffix} = s:restoremap_{a:suffix}."|".mapmode."map ".amap." ".maprhs
    endif
    if dounmap
@@ -430,8 +429,7 @@ fun! SaveUserMaps(mapmode,maplead,mapchx,suffix)
 	endif
     let s:restoremap_{a:suffix} = s:restoremap_{a:suffix}."|silent! ".mapmode."unmap ".amap
     if maparg(amap,mapmode) != ""
-     let maprhs= substitute(maparg(amap,mapmode),'|','<bar>','ge')
-"	 let maprhs= substitute(maprhs,'"<CR>',"\<cr>",'ge')
+     let maprhs                  = substitute(maparg(amap,mapmode),'|','<bar>','ge')
    	 let s:restoremap_{a:suffix} = s:restoremap_{a:suffix}."|".mapmode."map ".amap." ".maprhs
     endif
 	if dounmap

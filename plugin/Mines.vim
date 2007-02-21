@@ -1,8 +1,8 @@
 " Mines.vim: emulates a minefield
 "   Author:		Charles E. Campbell, Jr.
-"   Date:		Jan 17, 2007
-"   Version:	15
-" Copyright:    Copyright (C) 1999-2005 Charles E. Campbell, Jr. {{{1
+"   Date:		Feb 20, 2007
+"   Version:	16
+" Copyright:    Copyright (C) 1999-2007 Charles E. Campbell, Jr. {{{1
 "               Permission is hereby granted to use and distribute this code,
 "               with or without modifications, provided that this copyright
 "               notice is copied with it. Like anything else that's free,
@@ -22,7 +22,7 @@
 if &cp || exists("g:loaded_Mines")
  finish
 endif
-let g:loaded_Mines = "v15"
+let g:loaded_Mines = "v16"
 let s:keepcpo      = &cpo
 set cpo&vim
 "DechoTabOn
@@ -84,10 +84,7 @@ fun! s:EasyMines()
 "  call Dfunc("EasyMines()")
   if s:SanityCheck()|return|endif
   let s:field = "E"
-  let m1      = g:rndm_m1 + (localtime()%100 - 50)
-  let m2      = g:rndm_m2 + (localtime()/86400)%100
-  let m3      = g:rndm_m3 + (localtime()/3600)%100
-  call RndmInit(m1,m2,m3)
+  call RndmInit()
   call MineFieldSettings(10,10,15*10*10/100,120)
 "  call Dret("EasyMines")
 endfun
@@ -100,10 +97,7 @@ fun! s:MedMines()
 "  call Dfunc("MedMines()")
   if s:SanityCheck()|return|endif
   let s:field = "M"
-  let m1      = g:rndm_m1 + (localtime()%100 - 50)
-  let m2      = g:rndm_m2 + (localtime()/86400)%100
-  let m3      = g:rndm_m3 + (localtime()/3600)%100
-  call RndmInit(m1,m2,m3)
+  call RndmInit()
   call MineFieldSettings(18,18,15*22*22/100,240)
 "  call Dret("MedMines")
 endfun
@@ -116,10 +110,7 @@ fun! s:HardMines()
 "  call Dfunc("HardMines()")
   if s:SanityCheck()|return|endif
   let s:field = "H"
-  let m1      = g:rndm_m1 + (localtime()%100 - 50)
-  let m2      = g:rndm_m2 + (localtime()/86400)%100
-  let m3      = g:rndm_m3 + (localtime()/3600)%100
-  call RndmInit(m1,m2,m3)
+  call RndmInit()
   call MineFieldSettings(48,48,18*48*48/100,480)
 "  call Dret("HardMines")
 endfun
@@ -605,6 +596,7 @@ fun! s:Boom()
 
   norm! gg0
   exe "norm! ".curline."G".curcol."\<bar>"
+  call RndmSave()
 
 "  call Dret("Boom")
 endfun
@@ -1163,6 +1155,7 @@ fun! s:MF_Happy()
    let &ut= s:utkeep
   endif
   call s:Winners(1)
+  call RndmSave()
   set nolz
   set nomod
 
@@ -1197,12 +1190,11 @@ fun! s:Winners(winner)
   " report on statistics
   norm! j
   if g:mines_losecnt{s:field} > 0
-   let totgames= g:mines_wincnt{s:field} + g:mines_losecnt{s:field}
-   let percent= (10000*g:mines_wincnt{s:field})/totgames
-   let percent= (percent + 5)/10
-   let tenth   = percent % 10
-   let percent = (percent - tenth)/10
-   exe  "norm! j$lA  totals         : [".g:mines_wincnt{s:field}." wins]/[".totgames." games]=".percent.'.'.tenth."%"
+   let totgames = g:mines_wincnt{s:field} + g:mines_losecnt{s:field}
+   let percent  = (100000*g:mines_wincnt{s:field})/totgames
+   let int      = percent/1000
+   let frac     = percent%1000
+   exe  "norm! j$lA  totals         : [".g:mines_wincnt{s:field}." wins]/[".totgames." games]=".int.'.'.printf("%03d",frac)."%"
   else
    exe  "norm! j$lA  totals         : ".g:mines_wincnt{s:field}." wins, ".g:mines_losecnt{s:field}." losses"
   endif
