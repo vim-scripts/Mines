@@ -1,8 +1,8 @@
-*Mines.txt*	The Mines Game 				Jan 24, 2007
+*Mines.txt*	The Mines Game 				Jul 30, 2009
 
 Author:  Charles E. Campbell, Jr.  <NdrOchip@ScampbellPfamily.AbizM>
 	  (remove NOSPAM from the email address first)
-Copyright: (c) 2004-2007 by Charles E. Campbell, Jr.	*mines-copyright*
+Copyright: (c) 2004-2009 by Charles E. Campbell, Jr.	*mines-copyright*
            The VIM LICENSE applies to Mines.vim and Mines.txt
            (see |copyright|) except use "Mines" instead of "Vim"
 	   No warranty, express or implied.  Use At-Your-Own-Risk.
@@ -47,7 +47,7 @@ squares.  As soon as you click a <leftmouse> or x, the square under the cursor
 is revealed with either a count of the number of bombs around it or as a BOOM!
 Of course, to use a mouse means your vim must support using the mouse.  Gvim
 usually does; console vim may or may not depending on your supporting
-terminal (see |mouse|).
+terminal (see |'mouse'|).
 
 Statistics are stored in <$HOME/.vimMines>.  You need to have a $HOME
 environment variable set up properly for statistics to be kept.
@@ -127,6 +127,13 @@ close your eyes!
 =============================================================================
 2. History:						*mines-history* {{{1
 
+   17 : 04/08/08   * pressing "x" when atop an "f" now is a no-op; one must
+		     use an "f" to clear an "f".
+	11/29/08   * attempting to modify a completed minefield no longer
+		     produces not-modifiable error messages.
+	05/20/09   * cecutil bug fix
+	07/30/09   * fixed a bug where part of the minefield would disappear
+		     when virtualedit was off (I usually use :set ve=all).
    16 : 01/24/07   * on wins, percentage won now shown to 3 decimal places
                    * works with Rndm.vim to save seeds in $HOME/.seed to
 		     improve pseudo-random nature of games

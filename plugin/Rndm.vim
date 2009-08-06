@@ -1,7 +1,7 @@
 " Rndm:
 "  Author:  Charles E. Campbell, Jr.
-"  Date:    Feb 20, 2007
-"  Version: 4e	ASTRO-ONLY
+"  Date:    Aug 12, 2008
+"  Version: 4f	ASTRO-ONLY
 "
 "  Discussion:  algorithm developed at MIT
 "
@@ -15,6 +15,8 @@
 "                     on the interval [a,b]
 " Dice(qty,sides)   : emulates a variate from sum of "qty" user-specified
 "                     dice, each of which can take on values [1,sides]
+" SetDeck(N)        : returns a pseudo-random "deck" of integers from 1..N
+"                     (actually, a list of pseudo-randomly distributed integers)
 "
 "Col 2:8: Be careful that you don't let anyone rob you through his philosophy
 "         and vain deceit, after the tradition of men, after the elements of
@@ -25,7 +27,7 @@
 if &cp || exists("loaded_Rndm")
  finish
 endif
-let g:loaded_Rndm = "v4e"
+let g:loaded_Rndm = "v4f"
 let s:keepcpo     = &cpo
 set cpo&vim
 
@@ -163,6 +165,33 @@ fun! Dice(qty,sides)
   return sum
 endfun
 
+" ---------------------------------------------------------------------
+" SetDeck: this function returns a "deck" of integers from 1-N (actually, a list) {{{1
+fun! SetDeck(N)
+"  call Dfunc("SetDeck(N=".a:N.")")
+  let deck = []
+  let n    = 1
+  " generate a sequential list of integers
+  while n <= a:N
+   let deck= add(deck,n)
+   let n       = n + 1
+  endwhile
+  " generate a random deck using swaps
+  let n= a:N-1
+  while n > 0
+   let p= Urndm(0,a:N-1)
+   if n != p
+	let swap    = deck[n]
+	let deck[n] = deck[p]
+	let deck[p] = swap
+   endif
+   let n= n - 1
+  endwhile
+"  call Dret("SetDeck")
+  return deck
+endfun
+
+" ---------------------------------------------------------------------
 let &cpo= s:keepcpo
 unlet s:keepcpo
 " ---------------------------------------------------------------------

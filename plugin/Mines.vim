@@ -1,11 +1,11 @@
 " Mines.vim: emulates a minefield
 "   Author:		Charles E. Campbell, Jr.
-"   Date:		Feb 20, 2007
-"   Version:	16
-" Copyright:    Copyright (C) 1999-2007 Charles E. Campbell, Jr. {{{1
+"   Date:		Aug 06, 2009
+"   Version:	17
+" Copyright:    Copyright (C) 1999-2009 Charles E. Campbell, Jr. {{{1
 "               Permission is hereby granted to use and distribute this code,
 "               with or without modifications, provided that this copyright
-"               notice is copied with it. Like anything else that's free,
+"               notice is copied with it. Like much else that's free,
 "               Mines.vim is provided *as is* and comes with no warranty
 "               of any kind, either expressed or implied. By using this
 "               plugin, you agree that in no event will the copyright
@@ -17,12 +17,13 @@
 "  There is therefore now no condemnation to those who are in {{{1
 "  Christ Jesus, who don't walk according to the flesh, but
 "  according to the Spirit. (Rom 8:1 WEB)
+"redraw!|call DechoSep()|call inputsave()|call input("Press <cr> to continue")|call inputrestore()
 " ---------------------------------------------------------------------
 "  Single Loading Only: {{{1
 if &cp || exists("g:loaded_Mines")
  finish
 endif
-let g:loaded_Mines = "v16"
+let g:loaded_Mines = "v17"
 let s:keepcpo      = &cpo
 set cpo&vim
 "DechoTabOn
@@ -151,6 +152,7 @@ fun! MineFieldSettings(rows,cols,mines,timelapse)
    echoerr "Too many mines selected"
   else
    if s:InitMines()
+    set nomod
 "    call Dret("MineFieldSettings")
     return
    endif
@@ -163,6 +165,7 @@ fun! MineFieldSettings(rows,cols,mines,timelapse)
   let s:flagsused    = 0
   let s:marked       = 0
   let s:nobombs      = s:MFrows*s:MFcols- s:MFmines
+  set nomod
 "  call Dret("MineFieldSettings : timestart=".s:timestart." nobombs=".s:nobombs)
 endfun
 
@@ -178,6 +181,7 @@ fun! s:InitMines()
    return 1
   endif
 
+  setlocal nomod ma
   call s:DisplayMines(1)
   call s:ToggleMineTimer(g:mines_timer)
 
@@ -186,7 +190,8 @@ fun! s:InitMines()
   let s:keep_go     = &go
   let s:keep_fo     = &fo
   let s:keep_report = &report
-  set nolist go-=aA fo-=a nogd report=10000
+  let s:keep_spell  = &spell
+  setlocal nolist go-=aA fo-=a nogd report=10000 nospell
 
   " draw grid
 "  call Decho("draw grid")
@@ -265,18 +270,19 @@ fun! s:InitMines()
    endwhile
    let row = row + 1
   endwhile
-  augroup AuMinesTimer
+  augroup MFTimerAutocmd
    au!
   augroup END
 
   if g:mines_timer
-   augroup AuMinesTimer
-    au CursorHold * call s:TimeLapse()
+   augroup MFTimerAutocmd
+    au CursorHold *		call s:TimeLapse()
+	au BufLeave -Mines-	call s:MFBufLeave()
    augroup END
   endif
   let s:utkeep= &ut
   set ut=100
-  augroup AuMinesTimer
+  augroup MFTimerAutocmd
    au ColorScheme -Mines- call s:MFSyntax()
   augroup END
 
@@ -354,7 +360,7 @@ endfun
 " ---------------------------------------------------------------------
 " DrawMinefield: {{{2
 "     This function is responsible for drawing the minefield
-"     as the mouse is clicked
+"     as the leftmouse is clicked (or an "x" is pressed)
 fun! s:DrawMinefield()
 "  call Dfunc("DrawMinefield()")
   let col   = col(".")
@@ -362,6 +368,14 @@ fun! s:DrawMinefield()
   let colm1 = col - 1
   let rowm1 = row - 1
 "  call Decho("DrawMinefield: ".row.",".col." <".s:MF_{rowm1}_{colm1}.">")
+
+  "  sanity check: x atop a f should do nothing (must use f atop an f to clear it)
+  norm! vy
+  if @@ == 'f'
+   set nomod
+"   call Dret("DrawMinefield")
+   return
+  endif
 
   " first test: insure that the mouseclick is inside the playing area
   if 1 <= rowm1 && rowm1 <= s:MFrows && 1 <= colm1 && colm1 <= s:MFcols
@@ -391,6 +405,14 @@ endfun
 "    flags as the rightmouse is clicked
 fun! s:DrawMineflag()
 "  call Dfunc("DrawMineflag()")
+
+  " prevents some errors when trying to modify a completed minefield
+  if &ma == 0
+   set nomod
+"  call Dret("Boom")
+   return
+  endif
+
   let scol   = col(".")
   let srow   = line(".")
   let fcol = scol - 1
@@ -402,6 +424,8 @@ fun! s:DrawMineflag()
   " sanity check
   if fcol <= 0 || s:MFcols < fcol
    call s:FlagCounter()
+   let &ve= vekeep
+   set nomod
 "   call Dret("DrawMineflag")
    return
   endif
@@ -409,6 +433,7 @@ fun! s:DrawMineflag()
   " sanity check
   if frow <= 0 || s:MFrows < frow
    call s:FlagCounter()
+   set nomod
 "   call Dret("DrawMineflag")
    return
   endif
@@ -422,12 +447,14 @@ fun! s:DrawMineflag()
 	let s:bombsflagged= s:bombsflagged - 1
    endif
    call s:FlagCounter()
+   set nomod
 "   call Dret("DrawMineflag")
    return
   endif
   if @@ =~ '\d' || @@ == ' '
    " don't change numbered entries or no-bomb areas
    call s:FlagCounter()
+   set nomod
 "   call Dret("DrawMineflag")
    return
   endif
@@ -450,12 +477,16 @@ fun! s:DrawMineflag()
   else
    call s:FlagCounter()
   endif
+  set nomod
 "  call Dret("DrawMineflag")
 endfun
 
 " ---------------------------------------------------------------------
 " TimeLapse: {{{2
 fun! s:TimeLapse()
+  if expand("%") != '-Mines-'
+   return
+  endif
 "  call Dfunc("TimeLapse()")
 
   let timeused = localtime() - s:timestart - s:timesuspended
@@ -480,7 +511,39 @@ fun! s:TimeLapse()
   endif
 
   exe "norm! ".curline."G".curcol."\<bar>"
+  set nomod
 "  call Dret("TimeLapse")
+endfun
+
+" ---------------------------------------------------------------------
+" s:MFBufLeave: {{{2
+fun! s:MFBufLeave()
+"  call Dfunc("s:MFBufLeave()")
+
+  if s:mines_timer
+   augroup MFTimerAutocmd
+	au!
+	au BufEnter -Mines- call s:MFBufEnter()
+   augroup END
+  endif
+
+"  call Dret("s:MFBufLeave")
+endfun
+
+" ---------------------------------------------------------------------
+" s:MFBufEnter: {{{2
+fun! s:MFBufEnter()
+"  call Dfunc("s:MFBufEnter()")
+
+  if s:mines_timer
+   augroup MFTimerAutocmd
+    au!
+    au CursorHold *		call s:TimeLapse()
+	au BufLeave -Mines-	call s:MFBufLeave()
+   augroup END
+  endif
+
+"  call Dret("s:MFBufEnter")
 endfun
 
 " ---------------------------------------------------------------------
@@ -505,17 +568,18 @@ fun! s:ToggleMineTimer(mode)
 
   if s:mines_timer
    " turn timing on
-   augroup AuMinesTimer
+   augroup MFTimerAutocmd
     au!
-    au CursorHold * call s:TimeLapse()
+    au CursorHold *		call s:TimeLapse()
+	au BufLeave -Mines-	call s:MFBufLeave()
    augroup END
 
   else
    " turn timing off
-   augroup AuMinesTimer
+   augroup MFTimerAutocmd
     au!
    augroup END
-   augroup! AuMinesTimer
+   augroup! MFTimerAutocmd
   endif
 
 "  call Dret("ToggleMineTimer")
@@ -530,6 +594,16 @@ fun! s:Boom()
   if filereadable("-Mines-")
    call delete("-Mines-")
   endif
+
+  " prevents some errors when trying to modify a completed minefield
+  if &ma == 0
+"  call Dret("Boom")
+   return
+  endif
+
+  " set virtualedit
+  let vekeep= &ve
+  set ve=all
 
   " clean off right-hand side of minefield
   %s/^:.\{-}:\zs.*$//e
@@ -597,6 +671,10 @@ fun! s:Boom()
   norm! gg0
   exe "norm! ".curline."G".curcol."\<bar>"
   call RndmSave()
+  setlocal nolz nomod noma
+
+  " restore virtualedit
+  let &ve= vekeep
 
 "  call Dret("Boom")
 endfun
@@ -807,6 +885,7 @@ fun! s:StopMines(suspend)
    let &fo       = s:keep_fo
    let &gd       = s:keep_gd
    let &report   = s:keep_report
+   let &spell    = s:keep_spell
 
   else
    " suspend  Mines
@@ -897,6 +976,9 @@ endfun
 " FlagCounter: show count of flags{{{2
 fun! s:FlagCounter()
 "  call Dfunc("FlagCounter()")
+  let vekeep= &ve
+  setlocal ve=all
+
   let curpos    = getpos(".")
   call cursor(5,s:MFcols + 3)
   exe "norm! DA".(printf("    Flags Used: %d",s:flagsused))
@@ -905,6 +987,8 @@ fun! s:FlagCounter()
   exe "norm! DA    Time Used : ".s:timelapse."sec"
   call setpos(".",curpos)
   set nomod
+
+  let &ve= vekeep
 "  call Dret("FlagCounter")
 endfun
 
@@ -921,6 +1005,7 @@ fun! s:MF_Flood(frow,fcol)
 "   call Dret("MF_Flood")
    return
   endif
+  setlocal ma
   let colL= s:MF_FillLeft(a:frow,a:fcol)
   let colR= s:MF_FillRight(a:frow,a:fcol+1)
   let colL= (colL > 1)?        colL-1 : 1
@@ -944,6 +1029,7 @@ fun! s:MF_FillLeft(frow,fcol)
    return a:fcol
   endif
 
+  setlocal ma
   let Lcol= a:fcol
   while Lcol >= 1
    if " ".s:MF_{a:frow}_{Lcol} == " 0"
@@ -979,6 +1065,7 @@ fun! s:MF_FillRight(frow,fcol)
    return a:fcol
   endif
 
+  setlocal ma
   let Rcol= a:fcol
   while Rcol <= s:MFcols
    if " ".s:MF_{a:frow}_{Rcol} == " 0"
@@ -1075,6 +1162,12 @@ fun! s:MF_Happy()
    call delete("-Mines-")
   endif
 
+  " prevents some errors when trying to modify a completed minefield
+  if &ma == 0
+"  call Dret("Boom")
+   return
+  endif
+
   " clean off right-hand side of minefield
   %s/^:.\{-}:\zs.*$//e
 
@@ -1083,6 +1176,11 @@ fun! s:MF_Happy()
 "   call Dret("MF_Happy")
    return
   endif
+
+  " set virtualedit
+  let vekeep= &ve
+  set ve=all
+
   call s:ToggleMineTimer(0)
   let s:timelapse = localtime() - s:timestart
   let keep_ch   = &ch
@@ -1156,8 +1254,10 @@ fun! s:MF_Happy()
   endif
   call s:Winners(1)
   call RndmSave()
-  set nolz
-  set nomod
+  setlocal nolz nomod noma
+
+  " restore virtualedit
+  let &ve= vekeep
 
 "  call Dret("MF_Happy")
 endfun
