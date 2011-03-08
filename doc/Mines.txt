@@ -1,8 +1,8 @@
-*Mines.txt*	The Mines Game 				Jul 30, 2009
+*Mines.txt*	The Mines Game 				Mar 08, 2011
 
 Author:  Charles E. Campbell, Jr.  <NdrOchip@ScampbellPfamily.AbizM>
 	  (remove NOSPAM from the email address first)
-Copyright: (c) 2004-2009 by Charles E. Campbell, Jr.	*mines-copyright*
+Copyright: (c) 2004-2010 by Charles E. Campbell, Jr.	*mines-copyright*
            The VIM LICENSE applies to Mines.vim and Mines.txt
            (see |copyright|) except use "Mines" instead of "Vim"
 	   No warranty, express or implied.  Use At-Your-Own-Risk.
@@ -127,6 +127,17 @@ close your eyes!
 =============================================================================
 2. History:						*mines-history* {{{1
 
+   18 : 04/27/10   * the "norm" associated with flipping a flagged square back
+		     to normal has been changed to "norm!".  No other plain
+		     "norm"s are in Mines.vim.
+	08/12/10   * Mines now saves&sets&restores options using local
+		     variants, and noswf is used during Mines.
+	12/20/10   * Implemented autoload'ing for Mines so that it takes
+		     little time during startup
+	03/07/11   * Found a bug where pressing "f" wouldn't restore a square
+		     to "unknown" when it should (solution: needed to safe the
+		     |'et'| setting)
+	03/08/11   * Released to vim.sf.net
    17 : 04/08/08   * pressing "x" when atop an "f" now is a no-op; one must
 		     use an "f" to clear an "f".
 	11/29/08   * attempting to modify a completed minefield no longer
@@ -135,17 +146,17 @@ close your eyes!
 	07/30/09   * fixed a bug where part of the minefield would disappear
 		     when virtualedit was off (I usually use :set ve=all).
    16 : 01/24/07   * on wins, percentage won now shown to 3 decimal places
-                   * works with Rndm.vim to save seeds in $HOME/.seed to
+		   * works with Rndm.vim to save seeds in $HOME/.seed to
 		     improve pseudo-random nature of games
    15 : 06/28/06   * now includes cecutil.vim as part of its distribution
-                   * when game is over, if -Mines- exists, it will be deleted
+		   * when game is over, if -Mines- exists, it will be deleted
 		   * "Flags Used" field was misplaced for Medium and Hard
 		     games; fixed.
 		   * a "redr!" for debugging was inadvertently left in,
 		     causing flickering floods.  Fixed.
 	08/10/06   * included "Time Used" field during play
 	12/28/06   * at end-of-game, when one hits a mine, mistakenly flagged
-	             squares are shown with truth with blue background
+		     squares are shown with truth with blue background
    14 : 06/26/06   * added "Flags Used" field while playing
 	06/16/06   * pressing "c" changes corner
 		   * pressing 0  goes to leftmost  position inside minefield

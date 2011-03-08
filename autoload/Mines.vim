@@ -1,8 +1,8 @@
 " Mines.vim: emulates a minefield
 "   Author:		Charles E. Campbell, Jr.
-"   Date:		Aug 06, 2009
-"   Version:	17
-" Copyright:    Copyright (C) 1999-2009 Charles E. Campbell, Jr. {{{1
+"   Date:		Mar 08, 2011
+"   Version:	18
+" Copyright:    Copyright (C) 1999-2010 Charles E. Campbell, Jr. {{{1
 "               Permission is hereby granted to use and distribute this code,
 "               with or without modifications, provided that this copyright
 "               notice is copied with it. Like much else that's free,
@@ -23,97 +23,68 @@
 if &cp || exists("g:loaded_Mines")
  finish
 endif
-let g:loaded_Mines = "v17"
+let g:loaded_Mines = "v18"
 let s:keepcpo      = &cpo
 set cpo&vim
 "DechoTabOn
+"DechoToggle
 
 " ---------------------------------------------------------------------
 "  Mining Variables: {{{1
 let s:displayname = "-Mines-"
 let s:savesession = tempname()
-if !exists("g:mines_timer")
- let g:mines_timer= 1
-endif
 let s:mines_timer   = g:mines_timer
 let s:timestart     = 0
 let s:timestop      = 0
 let s:timesuspended = 0
 let s:MFmines       = 0
 
-" ---------------------------------------------------------------------
-"  Public Interface: {{{1
-
-if !hasmapto('<Plug>EasyMines')
- nmap <unique> <Leader>mfe	<Plug>EasyMines
-endif
-nmap <silent> <script> <Plug>EasyMines	:set lz<CR>:call <SID>EasyMines()<CR>:set nolz<CR>
-
-if !hasmapto('<Plug>MedMines')
- nmap <unique> <Leader>mfm	<Plug>MedMines
-endif
-nmap <silent> <script> <Plug>MedMines	:set lz<CR>:call <SID>MedMines()<CR>:set nolz<CR>
-
-if !hasmapto('<Plug>HardMines')
- nmap <unique> <Leader>mfh	<Plug>HardMines
-endif
-nmap <silent> <script> <Plug>HardMines	:set lz<CR>:call <SID>HardMines()<CR>:set nolz<CR>
-
-if !hasmapto('<Plug>RestoreMines')
- nmap <unique> <Leader>mfr  <Plug>RestoreMines
-endif
-nmap <silent> <script> <Plug>RestoreMines	:set lz<CR>:call <SID>DisplayMines(0)<CR>:set nolz<CR>
-
-if !hasmapto('<Plug>ToggleMineTimer')
- nmap <unique> <Leader>mft  <Plug>ToggleMineTimer
-endif
-nmap <silent> <script> <Plug>ToggleMineTimer	:set lz<CR>:let g:mines_timer= !g:mines_timer<CR>:set nolz<CR>
-
-if !hasmapto('<Plug>SaveStatistics')
- nmap <unique> <Leader>mfc  <Plug>SaveStatistics
-endif
-nmap <silent> <script> <Plug>SaveStatistics	:set lz<CR>:call <SID>SaveStatistics(0)<CR>:set nolz<CR>
-
 " =====================================================================
 " Functions: {{{1
 
 " ---------------------------------------------------------------------
-" EasyMines: {{{2
+" Mines#EasyMines: {{{2
 "    Requires an 12x12 grid be displayable with 15% mines
-fun! s:EasyMines()
+fun! Mines#EasyMines()
 "  let g:decho_hide= 1  "Decho
-"  call Dfunc("EasyMines()")
-  if s:SanityCheck()|return|endif
+"  call Dfunc("Mines#EasyMines()")
+  if s:SanityCheck()
+"  call Dret("Mines#EasyMines")
+   return
+  endif
   let s:field = "E"
   call RndmInit()
-  call MineFieldSettings(10,10,15*10*10/100,120)
-"  call Dret("EasyMines")
+  call Mines#MineFieldSettings(10,10,15*10*10/100,120)
+"  call Dret("Mines#EasyMines")
 endfun
 
 " ---------------------------------------------------------------------
-" MedMines: {{{2
+" Mines#MedMines: {{{2
 "    Requires a 20x20 grid be displayable with 15% mines
-fun! s:MedMines()
+fun! Mines#MedMines()
 "  let g:decho_hide= 1  "Decho
-"  call Dfunc("MedMines()")
-  if s:SanityCheck()|return|endif
+"  call Dfunc("Mines#MedMines()")
+  if s:SanityCheck()
+"  call Dret("MedMines")
+   return
+  endif
   let s:field = "M"
   call RndmInit()
-  call MineFieldSettings(18,18,15*22*22/100,240)
-"  call Dret("MedMines")
+  call Mines#MineFieldSettings(18,18,15*22*22/100,240)
+"  call Dret("Mines#MedMines")
 endfun
 
 " ---------------------------------------------------------------------
-" HardMines: {{{2{
+" Mines#HardMines: {{{2{
 "    Requies a 50x50 grid be displayable with 18% mines
-fun! s:HardMines()
+fun! Mines#HardMines()
 "  let g:decho_hide= 1  "Decho
-"  call Dfunc("HardMines()")
+"  call Dfunc("Mines#HardMines()")
   if s:SanityCheck()|return|endif
   let s:field = "H"
   call RndmInit()
-  call MineFieldSettings(48,48,18*48*48/100,480)
-"  call Dret("HardMines")
+  call Mines#MineFieldSettings(48,48,18*48*48/100,480)
+"  call Dret("Mines#HardMines")
 endfun
 
 " ---------------------------------------------------------------------
@@ -126,8 +97,8 @@ fun! s:SanityCheck()
    put ='You need Rndm.vim!'
    put =' '
    put ='Rndm.vim is available at'
-   put ='http://mysite.verizon.net/astronaut/vim/index.html#VimFuncs'
-   let msg='as "Rndm"  (Rndm is what generates pseudo-random variates)'
+   put ='http://mysite.verizon.net/astronaut/vim/index.html#RNDM'
+   let msg='  (Rndm is what generates pseudo-random variates)'
    put =msg
    return 1
   endif
@@ -135,15 +106,15 @@ fun! s:SanityCheck()
 endfun
 
 " ---------------------------------------------------------------------
-" MineFieldSettings: {{{2
+" Mines#MineFieldSettings: {{{2
 "   Can be used to generate a custom-sized display.
 "   The grid will be rows x cols big, plus 2 rows and columns for
 "   the outline.
 "   The third argument specifies how many mines will be placed into
 "   the grid.  Arbitrarily I've selected that at least 1/3 of the
 "   grid must be clear at the very least.
-fun! MineFieldSettings(rows,cols,mines,timelapse)
-"  call Dfunc("MineFieldSettings(rows=".a:rows.",cols=".a:cols.",mines=".a:mines.",timelapse=".a:timelapse.")")
+fun! Mines#MineFieldSettings(rows,cols,mines,timelapse)
+"  call Dfunc("Mines#MineFieldSettings(rows=".a:rows.",cols=".a:cols.",mines=".a:mines.",timelapse=".a:timelapse.")")
   let s:MFrows    = a:rows
   let s:MFcols    = a:cols
   let s:MFmines   = a:mines
@@ -152,8 +123,8 @@ fun! MineFieldSettings(rows,cols,mines,timelapse)
    echoerr "Too many mines selected"
   else
    if s:InitMines()
-    set nomod
-"    call Dret("MineFieldSettings")
+	setlocal nomod
+"    call Dret("Mines#MineFieldSettings")
     return
    endif
   endif
@@ -165,8 +136,8 @@ fun! MineFieldSettings(rows,cols,mines,timelapse)
   let s:flagsused    = 0
   let s:marked       = 0
   let s:nobombs      = s:MFrows*s:MFcols- s:MFmines
-  set nomod
-"  call Dret("MineFieldSettings : timestart=".s:timestart." nobombs=".s:nobombs)
+  setlocal nomod
+"  call Dret("Mines#MineFieldSettings : timestart=".s:timestart." nobombs=".s:nobombs)
 endfun
 
 " ---------------------------------------------------------------------
@@ -182,16 +153,18 @@ fun! s:InitMines()
   endif
 
   setlocal nomod ma
-  call s:DisplayMines(1)
+  call Mines#DisplayMines(1)
   call s:ToggleMineTimer(g:mines_timer)
 
   let s:keep_list   = &list
-  let s:keep_gd     = &gd
-  let s:keep_go     = &go
-  let s:keep_fo     = &fo
-  let s:keep_report = &report
-  let s:keep_spell  = &spell
-  setlocal nolist go-=aA fo-=a nogd report=10000 nospell
+  let s:keep_et     = &l:et
+  let s:keep_gd     = &l:gd
+  let s:keep_go     = &l:go
+  let s:keep_fo     = &l:fo
+  let s:keep_report = &l:report
+  let s:keep_spell  = &l:spell
+  let s:keep_sts    = 0
+  setlocal nolist noet go-=aA fo-=a nogd report=10000 nospell sts=0
 
   " draw grid
 "  call Decho("draw grid")
@@ -204,15 +177,15 @@ fun! s:InitMines()
   let line= line . ":"
 
   put =line
-  s/././g
-  norm! 1ggdd
+  keepj s/././g
+  keepj norm! 1ggdd
   let row= 1
   while row <= s:MFrows
    put =line
    let row = row + 1
   endwhile
   put =line
-  s/././g
+  keepj s/././g
   set nomod
 
   " clear the minefield
@@ -288,18 +261,18 @@ fun! s:InitMines()
 
   " title and author stuff
   1
-  exe "norm! jA           M I N E S"
-  exe "norm! jA    by Charles E. Campbell"
+  exe "keepj norm! jA           M I N E S"
+  exe "keepj norm! jA    by Charles E. Campbell"
 
-  nmap <buffer> 0		:exe 'norm! 0l\n'<cr>
-  nmap <buffer> $		:exe 'norm! 0f:h\n'<cr>
-  nmap <buffer> G		:exe 'norm! Gk\n'<cr>
-  nmap <buffer> g		:exe 'norm! ggj\n'<cr>
+  nmap <buffer> 0		:exe 'keepj norm! 0l\n'<cr>
+  nmap <buffer> $		:exe 'keepj norm! 0f:h\n'<cr>
+  nmap <buffer> G		:exe 'keepj norm! Gk\n'<cr>
+  nmap <buffer> g		:exe 'keepj norm! ggj\n'<cr>
   nmap <buffer> c		:call <SID>ChgCorner()<cr>
   set nomod
 
   " place cursor in upper left-hand corner of minefield
-  call cursor(2,2)
+  keepj call cursor(2,2)
 
 "  call Dret("InitMines")
   return 0
@@ -313,15 +286,15 @@ fun! s:ChgCorner()
   let col = col(".")
   if row < s:MFrows/2
    if col < s:MFcols/2
-   	norm! Gk0l
+   	keepj norm! Gk0l
    else
-   	norm! 1G0jl
+   	keepj norm! 1G0jl
    endif
   else
    if col < s:MFcols/2
-   	norm! Gk0f:h
+   	keepj norm! Gk0f:h
    else
-   	norm! 1Gj0f:h
+   	keepj norm! 1Gj0f:h
    endif
   endif
 "  call Dret("ChgCorner")
@@ -370,7 +343,7 @@ fun! s:DrawMinefield()
 "  call Decho("DrawMinefield: ".row.",".col." <".s:MF_{rowm1}_{colm1}.">")
 
   "  sanity check: x atop a f should do nothing (must use f atop an f to clear it)
-  norm! vy
+  keepj norm! vy
   if @@ == 'f'
    set nomod
 "   call Dret("DrawMinefield")
@@ -409,7 +382,7 @@ fun! s:DrawMineflag()
   " prevents some errors when trying to modify a completed minefield
   if &ma == 0
    set nomod
-"  call Dret("Boom")
+"   call Dret("Boom")
    return
   endif
 
@@ -420,13 +393,14 @@ fun! s:DrawMineflag()
   if s:mines_timer
    call s:TimeLapse()
   endif
+"  call Decho("scol=".scol." srow=".srow." fcol=".fcol." frow=".frow)
 
   " sanity check
   if fcol <= 0 || s:MFcols < fcol
    call s:FlagCounter()
    let &ve= vekeep
    set nomod
-"   call Dret("DrawMineflag")
+"   call Dret("DrawMineflag : failed sanity check (fcol=".fcol." s:MFcols=".s:MFcols.")")
    return
   endif
 
@@ -434,17 +408,21 @@ fun! s:DrawMineflag()
   if frow <= 0 || s:MFrows < frow
    call s:FlagCounter()
    set nomod
-"   call Dret("DrawMineflag")
+"   call Dret("DrawMineflag : failed sanity check (frow=".frow." s:MFrows=".s:MFrows.")")
    return
   endif
 
   " flip flagged square to unmarked
-  norm! vy
+  keepj norm! vy
+"  call Decho("flip flagged square to unmarked: @@<".@@.">")
   if @@ == 'f'
-   exe "norm r	"
+   exe "keepj norm! r\<tab>"
    let s:flagsused= s:flagsused - 1
-   if " ".s:MF_{frow}_{fcol} == ' *'
+"   call Decho("s:flagsused=".s:flagsused." (was ".(s:flagsused+1).")")
+"   call Decho("s:MF_".frow."_".fcol."=".s:MF_{frow}_{fcol})
+   if ' '.s:MF_{frow}_{fcol} == ' *'
 	let s:bombsflagged= s:bombsflagged - 1
+"	call Decho("s:bombsflagged=".s:bombsflagged." (was ".(s:bombsflagged+1).")")
    endif
    call s:FlagCounter()
    set nomod
@@ -455,7 +433,7 @@ fun! s:DrawMineflag()
    " don't change numbered entries or no-bomb areas
    call s:FlagCounter()
    set nomod
-"   call Dret("DrawMineflag")
+"   call Dret("DrawMineflag : don't change numbered entries or no-bomb areas")
    return
   endif
 
@@ -499,18 +477,18 @@ fun! s:TimeLapse()
 
    elseif g:mines_timer
 	let tms= localtime() - s:timestart
-	8
-    s/  Time.*$//e
-	exe "norm! A  Time used=".timeused.'sec'
-	9
-    s/  Time.*$//e
+	keepj 8
+    keepj s/  Time.*$//e
+	exe "keepj norm! A  Time used=".timeused.'sec'
+	keepj 9
+    keepj s/  Time.*$//e
 	let timeleft= s:MFmaxtime - timeused
-	exe "norm! A  Time left=".timeleft
+	exe "keepj norm! A  Time left=".timeleft
 "    call Decho("tms=".tms." timeused=".timeused." timeleft=".timeleft)
    endif
   endif
 
-  exe "norm! ".curline."G".curcol."\<bar>"
+  exe "keepj norm! ".curline."G".curcol."\<bar>"
   set nomod
 "  call Dret("TimeLapse")
 endfun
@@ -564,7 +542,7 @@ fun! s:ToggleMineTimer(mode)
   endif
 
   " clear off time information
-  silent! 8,9s/  Time.*$//e
+  silent! keepj 8,9s/  Time.*$//e
 
   if s:mines_timer
    " turn timing on
@@ -618,18 +596,18 @@ fun! s:Boom()
   call s:ToggleMineTimer(0)
 
   if s:field == "E"
-   3
+   keepj 3
   elseif s:field == "M"
-   7
+   keepj 7
   elseif s:field == "H"
-   10
+   keepj 10
   endif
   let s:timelapse= localtime() - s:timestart - s:timesuspended
-  exe "norm! A  BOOM!"
-  exe "norm! jA  Time  Used   : ".s:timelapse."sec"
-  exe "norm! jA  Bombs Flagged: ".s:bombsflagged
-  exe "norm! jA  Bombs Present: ".s:MFmines
-  exe "norm! jA  Flags Used   : ".s:flagsused
+  exe "keepj norm! A  BOOM!"
+  exe "keepj norm! jA  Time  Used   : ".s:timelapse."sec"
+  exe "keepj norm! jA  Bombs Flagged: ".s:bombsflagged
+  exe "keepj norm! jA  Bombs Present: ".s:MFmines
+  exe "keepj norm! jA  Flags Used   : ".s:flagsused
   let s:timestart    = 0
   let s:timestop     = 0
   let s:timesuspended= 0
@@ -637,7 +615,7 @@ fun! s:Boom()
    let &ut= s:utkeep
   endif
   call s:Winners(0)
-  11
+  keepj 11
   let row= 1
   norm! gg0jl
 
@@ -663,13 +641,13 @@ fun! s:Boom()
 	let col = col + 1
    endwhile
 "   call Decho("Boom: row=".row." line<".line.">")
-   exe 'norm! R'.line
+   exe 'keepj norm! R'.line
    let row = row + 1
-   norm! j0l
+   keepj norm! j0l
   endwhile
 
-  norm! gg0
-  exe "norm! ".curline."G".curcol."\<bar>"
+  keepj norm! gg0
+  exe "keepj norm! ".curline."G".curcol."\<bar>"
   call RndmSave()
   setlocal nolz nomod noma
 
@@ -777,10 +755,10 @@ fun! s:MFSyntax()
 endfun
 
 " ---------------------------------------------------------------------
-" DisplayMines: {{{2
+" Mines#DisplayMines: {{{2
 "    Displays a Minefield and sets up Minefield mappings
-fun! s:DisplayMines(init)
-"  call Dfunc("DisplayMines(init=".a:init.")")
+fun! Mines#DisplayMines(init)
+"  "  call Dfunc("Mines#DisplayMines(init=".a:init.")")
 
   " Settings
   set ts=1    " set tabstop to 1
@@ -789,17 +767,17 @@ fun! s:DisplayMines(init)
   if bufname("%") == s:displayname
    " already have a minefield display, and its showing
    if a:init == 1
-    silent! %d
+    silent! keepj %d
 "    call Decho("cleared screen")
    endif
-"   call Dret("DisplayMines")
+"   call Dret("Mines#DisplayMines")
    return
   endif
 
   " error message: attempt to restore a game that no longer exists
   if a:init == 0 && !exists("s:minebufnum")
    echomsg "***sorry*** I'm unable to restore your game (s suspends, q quits)"
-"   call Dret("DisplayMines : unable to restore")
+"   call Dret("Mines#DisplayMines : unable to restore")
    return
   endif
 
@@ -807,7 +785,7 @@ fun! s:DisplayMines(init)
   call SaveSession(s:savesession)
 
   " clear screen
-  silent! %d
+  silent! keepj %d
 "    call Decho("cleared screen")
   set nomod
 
@@ -822,7 +800,7 @@ fun! s:DisplayMines(init)
    " minefield buffer is merely hidden, restore it to view
    exe "b ".s:minebufnum
    let srows=s:MFrows+2
-   exe "silent! norm! ".srows."\<c-y>"
+   exe "silent! keepj norm! ".srows."\<c-y>"
    let s:timesuspended= s:timesuspended + localtime() - s:timestop
   endif
   silent only!
@@ -836,13 +814,13 @@ fun! s:DisplayMines(init)
   nmap <silent> q :silent call <SID>StopMines(0)<CR>
   nmap <silent> s :silent call <SID>StopMines(1)<CR>
   nmap <silent> f :silent call <SID>DrawMineflag()<CR>
-  nmap <silent> C :set lz<CR>:call <SID>SaveStatistics(0)<CR>:set nolz<CR>
-  nmap <silent> E :set lz<CR>:call <SID>EasyMines()<CR>:set nolz<CR>
-  nmap <silent> M :set lz<CR>:call <SID>MedMines()<CR>:set nolz<CR>
-  nmap <silent> H :set lz<CR>:call <SID>HardMines()<CR>:set nolz<CR>
+  nmap <silent> C :set lz<CR>:call Mines#SaveStatistics(0)<CR>:set nolz<CR>
+  nmap <silent> E :set lz<CR>:call Mines#EasyMines()<CR>:set nolz<CR>
+  nmap <silent> M :set lz<CR>:call Mines#MedMines()<CR>:set nolz<CR>
+  nmap <silent> H :set lz<CR>:call Mines#HardMines()<CR>:set nolz<CR>
 
   call s:ToggleMineTimer(g:mines_timer)
-"  call Dret("DisplayMines")
+"  call Dret("Mines#DisplayMines")
 endfun
 
 " ---------------------------------------------------------------------
@@ -877,15 +855,19 @@ fun! s:StopMines(suspend)
    endif
 
 "   call Decho("restoring options")
-   let &hidden   = s:keep_hidden
-   let &mouse    = s:keep_mouse
-   let &gdefault = s:keep_gdefault
-   let &list     = s:keep_list
-   let &go       = s:keep_go
-   let &fo       = s:keep_fo
-   let &gd       = s:keep_gd
-   let &report   = s:keep_report
-   let &spell    = s:keep_spell
+   let &l:et       = s:keep_et
+   let &l:fo       = s:keep_fo
+   let &l:gdefault = s:keep_gdefault
+   let &l:gd       = s:keep_gd
+   let &l:go       = s:keep_go
+   let &l:hidden   = s:keep_hidden
+   let &l:list     = s:keep_list
+   let &l:mouse    = s:keep_mouse
+   let &l:report   = s:keep_report
+   let &l:spell    = s:keep_spell
+   let &l:sts      = s:keep_sts
+   let &l:swf      = s:keep_swf
+   let s:swfkeep   = &swf
 
   else
    " suspend  Mines
@@ -919,13 +901,14 @@ fun! SaveSession(savefile)
   call SaveUserMaps("n","","<rightmouse>","Mines")
 
   " save user settings
-  let keep_ssop       = &ssop
-  let s:keep_hidden   = &hidden
-  let s:keep_mouse    = &mouse
+  let keep_ssop       = &l:ssop
+  let s:keep_hidden   = &l:hidden
+  let s:keep_mouse    = &l:mouse
   let s:keep_bufnum   = bufnr("%")
-  let s:keep_gdefault = &gdefault
+  let s:keep_gdefault = &l:gdefault
+  let s:keep_swf      = &l:swf
   let &ssop           = 'winpos,buffers,slash,globals,resize,blank,folds,help,options,winsize'
-  set hidden nogd
+  setlocal hidden nogd noswf
 
   " make a session file and save it in the a:savefile (a temporary file)
   exe 'silent! mksession! '.a:savefile
@@ -944,10 +927,10 @@ fun! s:ShowAt(row,col)
    call s:MF_Flood(a:row,a:col)
    call s:MF_Posn(a:row,a:col)
   else
-   norm! vy
+   keepj norm! vy
    if @@ == "\t"
     call s:CheckIfFlagged()
-    exe "norm! r".s:MF_{a:row}_{a:col}
+    exe "keepj norm! r".s:MF_{a:row}_{a:col}
    endif
   endif
 
@@ -961,7 +944,7 @@ endfun
 fun! s:CheckIfFlagged()
 "  call Dfunc("CheckIfFlagged()")
 
-  norm! vy
+  keepj norm! vy
   if @@ == 'f'
    let s:marked   = s:marked    + 1
    let s:flagsused= s:flagsused - 1
@@ -980,12 +963,12 @@ fun! s:FlagCounter()
   setlocal ve=all
 
   let curpos    = getpos(".")
-  call cursor(5,s:MFcols + 3)
-  exe "norm! DA".(printf("    Flags Used: %d",s:flagsused))
-  call cursor(6,s:MFcols + 3)
+  keepj call cursor(5,s:MFcols + 3)
+  exe "keepj norm! DA".(printf("    Flags Used: %d",s:flagsused))
+  keepj call cursor(6,s:MFcols + 3)
   let s:timelapse= localtime() - s:timestart - s:timesuspended
-  exe "norm! DA    Time Used : ".s:timelapse."sec"
-  call setpos(".",curpos)
+  exe "keepj norm! DA    Time Used : ".s:timelapse."sec"
+  keepj call setpos(".",curpos)
   set nomod
 
   let &ve= vekeep
@@ -1034,15 +1017,15 @@ fun! s:MF_FillLeft(frow,fcol)
   while Lcol >= 1
    if " ".s:MF_{a:frow}_{Lcol} == " 0"
 	call s:CheckIfFlagged()
-    exe "norm! r h"
+    exe "keepj norm! r h"
     let s:MF_{a:frow}_{Lcol}= 'z'
    elseif " ".s:MF_{a:frow}_{Lcol} != " z"
 	call s:CheckIfFlagged()
-    exe "norm! r".s:MF_{a:frow}_{Lcol}
+    exe "keepj norm! r".s:MF_{a:frow}_{Lcol}
 "	call Decho("end-of-run left: Lcol=".Lcol."<".s:MF_{a:frow}_{Lcol}.">")
     break
    else
-	norm! h
+	keepj norm! h
    endif
    let Lcol= Lcol - 1
   endwhile
@@ -1070,15 +1053,15 @@ fun! s:MF_FillRight(frow,fcol)
   while Rcol <= s:MFcols
    if " ".s:MF_{a:frow}_{Rcol} == " 0"
 	call s:CheckIfFlagged()
-    exe "norm! r l"
+    exe "keepj norm! r l"
 	let s:MF_{a:frow}_{Rcol}= 'z'
    elseif " ".s:MF_{a:frow}_{Rcol} != " z"
 	call s:CheckIfFlagged()
-    exe "norm! r".s:MF_{a:frow}_{Rcol}
+    exe "keepj norm! r".s:MF_{a:frow}_{Rcol}
 "	call Decho("end-of-run right: Rcol=".Rcol."<".s:MF_{a:frow}_{Rcol}.">")
     break
    else
-    norm! l
+    keepj norm! l
    endif
    let Rcol= Rcol + 1
   endwhile
@@ -1108,15 +1091,15 @@ fun! s:MF_FillRun(frow,fcolL,fcolR)
   while icol <= a:fcolR
    if " ".s:MF_{a:frow}_{icol} == " 0"
 	call s:CheckIfFlagged()
-	exe "norm! r l"
+	exe "keepj norm! r l"
 	let s:MF_{a:frow}_{icol}= 'z'
 	call s:MF_Flood(a:frow,icol)
     call s:MF_Posn(a:frow,icol+1)
    elseif " ".s:MF_{a:frow}_{icol} != " z"
 	call s:CheckIfFlagged()
-	exe "norm! r".s:MF_{a:frow}_{icol}."l"
+	exe "keepj norm! r".s:MF_{a:frow}_{icol}."l"
    else
-	norm! l
+	keepj norm! l
    endif
    let icol= icol + 1
   endwhile
@@ -1146,7 +1129,7 @@ fun! s:MF_Posn(frow,fcol)
   endif
   let srow= a:frow + 1
   let scol= a:fcol + 1
-  exe "norm! ".srow."G".scol."\<Bar>"
+  exe "keepj norm! ".srow."G".scol."\<Bar>"
 
 "  call Dret("MF_Posn 0")
   return 0
@@ -1186,66 +1169,66 @@ fun! s:MF_Happy()
   let keep_ch   = &ch
   set ch=5
   set lz
-  exe "silent! norm! z-"
+  exe "silent! keepj norm! z-"
 
-  2
-  exe "norm! A   o"
-  exe "norm! jA  ,\<bar>`"
-  exe "norm! jA  /\\"
+  keepj 2
+  exe "keepj norm! A   o"
+  exe "keepj norm! jA  ,\<bar>`"
+  exe "keepj norm! jA  /\\"
   sleep 250m
   redr
 
-  2
-  exe "norm! 0f:lDA      o"
-  exe "norm! 0jf:lDA     /\\"
-  exe "norm! 0jf:lDA    /\\"
+  keepj 2
+  exe "keepj norm! 0f:lDA      o"
+  exe "keepj norm! 0jf:lDA     /\\"
+  exe "keepj norm! 0jf:lDA    /\\"
   sleep 250m
   redr
 
-  2
-  exe "norm! 0f:lDA     \\   "
-  exe "norm! 0jf:lDA      --o"
-  exe "norm! 0jf:lDA     / \\"
+  keepj 2
+  exe "keepj norm! 0f:lDA     \\   "
+  exe "keepj norm! 0jf:lDA      --o"
+  exe "keepj norm! 0jf:lDA     / \\"
   sleep 250m
   redr
 
-  2
-  exe "norm! 0f:lDA        \\ /"
-  exe "norm! 0jf:lDA         \<bar>"
-  exe "norm! 0jf:lDA         o"
-  exe "norm! jA        / \\"
+  keepj 2
+  exe "keepj norm! 0f:lDA        \\ /"
+  exe "keepj norm! 0jf:lDA         \<bar>"
+  exe "keepj norm! 0jf:lDA         o"
+  exe "keepj norm! jA        / \\"
   sleep 250m
   redr
 
-  2
-  exe "norm! 0f:lDA         \\ /"
-  exe "norm! 0jf:lDA          /"
-  exe "norm! 0jf:lDA         o"
-  exe "norm! 0jf:lDA        / \\"
+  keepj 2
+  exe "keepj norm! 0f:lDA         \\ /"
+  exe "keepj norm! 0jf:lDA          /"
+  exe "keepj norm! 0jf:lDA         o"
+  exe "keepj norm! 0jf:lDA        / \\"
   sleep 250m
   redr
 
-  2
-  exe "norm! 0f:lDA            /"
-  exe "norm! j0f:lDA         o-- "
-  exe "norm! j0f:lDA        / \\ \\"
-  exe "norm! j0f:lD"
+  keepj 2
+  exe "keepj norm! 0f:lDA            /"
+  exe "keepj norm! j0f:lDA         o-- "
+  exe "keepj norm! j0f:lDA        / \\ \\"
+  exe "keepj norm! j0f:lD"
   sleep 250m
   redr
 
-  2
-  exe "norm! 0f:lDA             \\o/   YOU"
-  exe "norm! j0f:lDA              )    WON"
-  exe "norm! j0f:lDA             /\\    !!!"
+  keepj 2
+  exe "keepj norm! 0f:lDA             \\o/   YOU"
+  exe "keepj norm! j0f:lDA              )    WON"
+  exe "keepj norm! j0f:lDA             /\\    !!!"
   redr
 
   " clear off "Flags Used: ..." field
-  call cursor(5,13)
-  norm! Dk$
+  keepj call cursor(5,13)
+  keepj norm! Dk$
   redr
 
-  exe "norm! jjA  Time  Used   : ".s:timelapse."sec"
-  exe "norm! jA  Bombs Flagged: ".s:MFmines
+  exe "keepj norm! jjA  Time  Used   : ".s:timelapse."sec"
+  exe "keepj norm! jA  Bombs Flagged: ".s:MFmines
 
   let s:timestart= 0
   let &ch        = keep_ch
@@ -1281,11 +1264,11 @@ fun! s:Winners(winner)
   if filereadable($HOME."/.vimMines")
    exe "so ".$HOME."/.vimMines"
   else
-   call s:SaveStatistics(0)
+   call Mines#SaveStatistics(0)
   endif
 
   call s:UpdateStatistics(a:winner)
-  call s:SaveStatistics(1)
+  call Mines#SaveStatistics(1)
 
   " report on statistics
   norm! j
@@ -1294,30 +1277,30 @@ fun! s:Winners(winner)
    let percent  = (100000*g:mines_wincnt{s:field})/totgames
    let int      = percent/1000
    let frac     = percent%1000
-   exe  "norm! j$lA  totals         : [".g:mines_wincnt{s:field}." wins]/[".totgames." games]=".int.'.'.printf("%03d",frac)."%"
+   exe  "keepj norm! j$lA  totals         : [".g:mines_wincnt{s:field}." wins]/[".totgames." games]=".int.'.'.printf("%03d",frac)."%"
   else
-   exe  "norm! j$lA  totals         : ".g:mines_wincnt{s:field}." wins, ".g:mines_losecnt{s:field}." losses"
+   exe  "keepj norm! j$lA  totals         : ".g:mines_wincnt{s:field}." wins, ".g:mines_losecnt{s:field}." losses"
   endif
   if g:mines_curwinstreak{s:field} > 0
-   exe "norm! j$lA  current streak : ".g:mines_curwinstreak{s:field}." wins"
+   exe "keepj norm! j$lA  current streak : ".g:mines_curwinstreak{s:field}." wins"
   else
-   exe "norm! j$lA  current streak : ".g:mines_curlosestreak{s:field}." losses"
+   exe "keepj norm! j$lA  current streak : ".g:mines_curlosestreak{s:field}." losses"
   endif
-  exe "norm! j$lA  longest streaks: ".g:mines_winstreak{s:field}." wins, ".g:mines_losestreak{s:field}." losses"
+  exe "keepj norm! j$lA  longest streaks: ".g:mines_winstreak{s:field}." wins, ".g:mines_losestreak{s:field}." losses"
 
   if s:field == "E"
    if g:mines_timeE > 0
-    exe "norm! j$lA  best time=".g:mines_timeE."sec (easy)"
+    exe "keepj norm! j$lA  best time=".g:mines_timeE."sec (easy)"
    endif
   endif
   if s:field == "M"
    if g:mines_timeM > 0
-    exe "norm! j$lA  best time=".g:mines_timeM."sec (medium)"
+    exe "keepj norm! j$lA  best time=".g:mines_timeM."sec (medium)"
    endif
   endif
   if s:field == "H"
    if g:mines_timeH > 0
-    exe "norm! j$lA  best time=".g:mines_timeH."sec (hard)"
+    exe "keepj norm! j$lA  best time=".g:mines_timeH."sec (hard)"
    endif
   endif
 
@@ -1374,12 +1357,12 @@ fun! s:StatSanity(field)
 endfun
 
 " ---------------------------------------------------------------------
-" SaveStatistics: {{{2
-fun! s:SaveStatistics(mode)
-"  call Dfunc("SaveStatistics(mode=".a:mode.")")
+" Mines#SaveStatistics: {{{2
+fun! Mines#SaveStatistics(mode)
+"  call Dfunc("Mines#SaveStatistics(mode=".a:mode.")")
 
   if $HOME == ""
-"   call Dret("SaveStatistics : no $HOME")
+"   call Dret("Mines#SaveStatistics : no $HOME")
    return
   endif
 
@@ -1441,7 +1424,7 @@ fun! s:SaveStatistics(mode)
   silent! w!
   silent! q!
 
-"  call Dret("SaveStatistics")
+"  call Dret("Mines#SaveStatistics")
 endfun
 
 " ---------------------------------------------------------------------

@@ -7,7 +7,7 @@
 "
 "           <Rndm.vim> uses three pseudo-random seed variables
 "              g:rndm_m1 g:rndm_m2 g:rndm_m3
-"           Each should be on the interval 0 - 100,000,000
+"           Each should be on the interval [0, 100,000,000)
 "
 " RndmInit(s1,s2,s3): takes three arguments to set the three seeds (optional)
 " Rndm()            : generates a pseudo-random variate on [0,100000000)

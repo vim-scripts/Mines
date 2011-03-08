@@ -1,6 +1,6 @@
 This is a mirror of http://www.vim.org/scripts/script.php?script_id=551
 
-Mines is a Vim plugin, but you can also source it in.  Mines includes cecutil.vim and Rndm.vim (for screen restoration and for pseudo-random number generation).  The latest developments in Mines.vim will always be available at
+Mines implements the popular game of Mines using Vim, retaining your best scores for each of three levels: Easy, Medium, and Hard.  Mines includes cecutil.vim and Rndm.vim (for screen restoration and for pseudo-random number generation).  The latest developments in Mines.vim will always be available at
 
     http://mysite.verizon.net/astronaut/vim/index.html#MINES
 
@@ -10,7 +10,7 @@ Mines is a Vim plugin, but you can also source it in.  Mines includes cecutil.vi
         \mfh : play a  high-difficulty mines game
         \mfr : restore a game
 
-Note that using the \mf_ maps above will save the files showing in all windows and save your session.  Although I've used the backslash in the maps as shown here, actually they use <Leader> so you may customize your maps using mapleader as you wish.
+Note that using the \mf_ maps above will save the files showing in all windows and save your session.  Although I've used the backslash in the maps as shown here, they actually use <Leader>, so you may customize your maps using mapleader as you wish.
 
 Mines.vim is a use-at-your-own-risk game.  However, an effort has been made to preserve your files.  The game does a "windo w" and uses mksession to both save your working files that are showing in your windows and to preserve your window layout for subsequent restoration.
 
@@ -50,5 +50,5 @@ If you win Minnie will do a cartwheel for you!
 
 Sigh -- there appears to be a problem with Sun Solarus dtterms -- Mines highlights several characters with the same foreground and background colors, and this action appears to turn the cursor off on dtterms.  I'm afraid I don't know how to work around this; does anyone know how to turn the cursor back on???
 
-Thank you for rating Mines.vim -- good luck!
+Thank you for rating Mines.vim -- and good luck!
 
