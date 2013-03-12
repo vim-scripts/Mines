@@ -1,5 +1,5 @@
 " Rndm:
-"  Author:  Charles E. Campbell, Jr.
+"  Author:  Charles E. Campbell
 "  Date:    Aug 12, 2008
 "  Version: 4f	ASTRO-ONLY
 "
@@ -59,7 +59,7 @@ fun! RndmInit(...)
    set lz ei=all
 
    1split
-   exe "silent! e ".expand("$HOME")."/.seed"
+   exe "sil! e ".expand("$HOME")."/.seed"
    let curbuf= bufnr("%")
 "   call Decho("curbuf=".curbuf." fname<".expand("%").">")
    silent! s/ /\r/g

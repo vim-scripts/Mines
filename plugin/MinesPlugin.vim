@@ -1,8 +1,8 @@
 " Mines.vim: emulates a minefield
-"   Author:		Charles E. Campbell, Jr.
-"   Date:		Dec 20, 2010
-"   Version:	18e	ASTRO-ONLY
-" Copyright:    Copyright (C) 1999-2010 Charles E. Campbell, Jr. {{{1
+"   Author:		Charles E. Campbell
+"   Date:		Nov 28, 2012
+"   Version:	19f	ASTRO-ONLY
+" Copyright:    Copyright (C) 1999-2012 Charles E. Campbell {{{1
 "               Permission is hereby granted to use and distribute this code,
 "               with or without modifications, provided that this copyright
 "               notice is copied with it. Like much else that's free,
@@ -38,32 +38,32 @@ endif
 if !hasmapto('<Plug>EasyMines')
  nmap <unique> <Leader>mfe	<Plug>EasyMines
 endif
-nmap <silent> <script> <Plug>EasyMines	:set lz<CR>:call Mines#EasyMines()<CR>:set nolz<CR>
+nnoremap <silent> <script> <Plug>EasyMines	:set lz<CR>:call Mines#EasyMines()<CR>:set nolz<CR>
 
 if !hasmapto('<Plug>MedMines')
  nmap <unique> <Leader>mfm	<Plug>MedMines
 endif
-nmap <silent> <script> <Plug>MedMines	:set lz<CR>:call Mines#MedMines()<CR>:set nolz<CR>
+nnoremap <silent> <script> <Plug>MedMines	:set lz<CR>:call Mines#MedMines()<CR>:set nolz<CR>
 
 if !hasmapto('<Plug>HardMines')
  nmap <unique> <Leader>mfh	<Plug>HardMines
 endif
-nmap <silent> <script> <Plug>HardMines	:set lz<CR>:call Mines#HardMines()<CR>:set nolz<CR>
+nnoremap <silent> <script> <Plug>HardMines	:set lz<CR>:call Mines#HardMines()<CR>:set nolz<CR>
 
 if !hasmapto('<Plug>RestoreMines')
  nmap <unique> <Leader>mfr  <Plug>RestoreMines
 endif
-nmap <silent> <script> <Plug>RestoreMines	:set lz<CR>:call Mines#DisplayMines(0)<CR>:set nolz<CR>
+nnoremap <silent> <script> <Plug>RestoreMines	:set lz<CR>:call Mines#DisplayMines(0)<CR>:set nolz<CR>
 
 if !hasmapto('<Plug>ToggleMineTimer')
  nmap <unique> <Leader>mft  <Plug>ToggleMineTimer
 endif
-nmap <silent> <script> <Plug>ToggleMineTimer	:set lz<CR>:let g:mines_timer= !g:mines_timer<CR>:set nolz<CR>
+nnoremap <silent> <script> <Plug>ToggleMineTimer	:set lz<CR>:let g:mines_timer= !g:mines_timer<CR>:set nolz<CR>
 
 if !hasmapto('<Plug>SaveStatistics')
  nmap <unique> <Leader>mfc  <Plug>SaveStatistics
 endif
-nmap <silent> <script> <Plug>SaveStatistics	:set lz<CR>:call Mines#SaveStatistics(0)<CR>:set nolz<CR>
+nnoremap <silent> <script> <Plug>SaveStatistics	:set lz<CR>:call Mines#SaveStatistics(0)<CR>:set nolz<CR>
 
 " ---------------------------------------------------------------------
 "  Restore: {{{1

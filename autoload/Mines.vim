@@ -1,8 +1,8 @@
 " Mines.vim: emulates a minefield
-"   Author:		Charles E. Campbell, Jr.
-"   Date:		Mar 08, 2011
-"   Version:	18
-" Copyright:    Copyright (C) 1999-2010 Charles E. Campbell, Jr. {{{1
+"   Author:		Charles E. Campbell
+"   Date:		Mar 12, 2013
+"   Version:	19
+" Copyright:    Copyright (C) 1999-2012 Charles E. Campbell {{{1
 "               Permission is hereby granted to use and distribute this code,
 "               with or without modifications, provided that this copyright
 "               notice is copied with it. Like much else that's free,
@@ -23,7 +23,7 @@
 if &cp || exists("g:loaded_Mines")
  finish
 endif
-let g:loaded_Mines = "v18"
+let g:loaded_Mines = "v19"
 let s:keepcpo      = &cpo
 set cpo&vim
 "DechoTabOn
@@ -88,8 +88,13 @@ fun! Mines#HardMines()
 endfun
 
 " ---------------------------------------------------------------------
-"  SanityCheck: {{{2
+"  SanityCheck: insure that Rndm.vim is present and/or loadable by AsNeeded {{{2
 fun! s:SanityCheck()
+  if !exists("*RndmInit")
+   if exists(":AN")
+	sil! call RndmInit()
+   endif
+  endif
   if !exists("*RndmInit")
    rightb split
    enew
@@ -102,6 +107,9 @@ fun! s:SanityCheck()
    put =msg
    return 1
   endif
+  if !has("gui_running")
+   echomsg "***Mines*** the cursor may not appear under some terms; gvim works more reliably"
+  endif
   return 0
 endfun
 
@@ -112,7 +120,19 @@ endfun
 "   the outline.
 "   The third argument specifies how many mines will be placed into
 "   the grid.  Arbitrarily I've selected that at least 1/3 of the
-"   grid must be clear at the very least.
+"   grid must be clear.
+"
+" Note that the minefield grid, s:MF_(row)_(col) has
+"   "0"     : the display is showing a tab,   stands for no-bombs-nearby
+"   "z"     : the display is showing a space, stands for no-bombs-nearby
+"   "1"-"8" : the qty of bombs near this location
+"   "*"     : BOMB!
+"
+" The display shows
+"   "f"     : user has flagged this square as purportedly containing a bomb
+"   " "     : a space indicates no bombs nearby
+"   "1"-"8" : qty of bombs nearby
+"   "<tab>" : this square is an unknown
 fun! Mines#MineFieldSettings(rows,cols,mines,timelapse)
 "  call Dfunc("Mines#MineFieldSettings(rows=".a:rows.",cols=".a:cols.",mines=".a:mines.",timelapse=".a:timelapse.")")
   let s:MFrows    = a:rows
@@ -156,15 +176,16 @@ fun! s:InitMines()
   call Mines#DisplayMines(1)
   call s:ToggleMineTimer(g:mines_timer)
 
-  let s:keep_list   = &list
+  let s:keep_cul    = &cul
   let s:keep_et     = &l:et
   let s:keep_gd     = &l:gd
   let s:keep_go     = &l:go
   let s:keep_fo     = &l:fo
+  let s:keep_list   = &list
   let s:keep_report = &l:report
   let s:keep_spell  = &l:spell
   let s:keep_sts    = 0
-  setlocal nolist noet go-=aA fo-=a nogd report=10000 nospell sts=0
+  setlocal nolist noet go-=aA fo-=a nogd report=10000 nospell sts=0 nocul
 
   " draw grid
 "  call Decho("draw grid")
@@ -206,6 +227,11 @@ fun! s:InitMines()
   while mines < s:MFmines
    let row  = Urndm(1,s:MFrows)
    let col  = Urndm(1,s:MFcols)
+   if row == 1 && col == 1
+	" this guarantees that the upper left hand
+	" corner will always be safe. "safe start"
+	continue
+   endif
    if s:MF_{row}_{col} == '0'
     let mines            = mines + 1
     let s:MF_{row}_{col} = '*'
@@ -243,14 +269,19 @@ fun! s:InitMines()
    endwhile
    let row = row + 1
   endwhile
+"  call Decho("clearing augroup MFTimerAutocmd")
   augroup MFTimerAutocmd
    au!
   augroup END
+  augroup MFTimerAutocmd
+   au CursorMoved	-Mines-	call s:FlagCounter()
+  augroup END
 
-  if g:mines_timer
+  if exists("g:mines_timer") && g:mines_timer
+"   call Decho("installing MFTimerAutocmd: TimeLapse, MFBufLeave")
    augroup MFTimerAutocmd
-    au CursorHold *		call s:TimeLapse()
-	au BufLeave -Mines-	call s:MFBufLeave()
+    au CursorHold	*		call s:TimeLapse()
+	au BufLeave		-Mines-	call s:MFBufLeave()
    augroup END
   endif
   let s:utkeep= &ut
@@ -264,11 +295,11 @@ fun! s:InitMines()
   exe "keepj norm! jA           M I N E S"
   exe "keepj norm! jA    by Charles E. Campbell"
 
-  nmap <buffer> 0		:exe 'keepj norm! 0l\n'<cr>
-  nmap <buffer> $		:exe 'keepj norm! 0f:h\n'<cr>
-  nmap <buffer> G		:exe 'keepj norm! Gk\n'<cr>
-  nmap <buffer> g		:exe 'keepj norm! ggj\n'<cr>
-  nmap <buffer> c		:call <SID>ChgCorner()<cr>
+  nnoremap <buffer> 0		:exe 'keepj norm! 0l\n'<cr>
+  nnoremap <buffer> $		:exe 'keepj norm! 0f:h\n'<cr>
+  nnoremap <buffer> G		:exe 'keepj norm! Gk\n'<cr>
+  nnoremap <buffer> g		:exe 'keepj norm! ggj\n'<cr>
+  nnoremap <buffer> c		:call <SID>ChgCorner()<cr>
   set nomod
 
   " place cursor in upper left-hand corner of minefield
@@ -279,7 +310,8 @@ fun! s:InitMines()
 endfun
 
 " ---------------------------------------------------------------------
-" ChgCorner: {{{2
+" ChgCorner: supports the "c" map to permit rapidly flitting from one {{{2
+"            corner of the grid display to the next.
 fun! s:ChgCorner()
 "  call Dfunc("ChgCorner()")
   let row = line(".")
@@ -465,7 +497,7 @@ fun! s:TimeLapse()
   if expand("%") != '-Mines-'
    return
   endif
-"  call Dfunc("TimeLapse()")
+"  call Dfunc("TimeLapse() %<".expand("%").">")
 
   let timeused = localtime() - s:timestart - s:timesuspended
   let curline  = line(".")
@@ -477,13 +509,11 @@ fun! s:TimeLapse()
 
    elseif g:mines_timer
 	let tms= localtime() - s:timestart
-	keepj 8
-    keepj s/  Time.*$//e
-	exe "keepj norm! A  Time used=".timeused.'sec'
-	keepj 9
-    keepj s/  Time.*$//e
+    keepj call cursor(8,s:MFcols + 3)
+	exe "keepj norm! DA    Time used  : ".timeused.'sec'
+    keepj call cursor(9,s:MFcols + 3)
 	let timeleft= s:MFmaxtime - timeused
-	exe "keepj norm! A  Time left=".timeleft
+	exe "keepj norm! DA    Time left  : ".timeleft."sec"
 "    call Decho("tms=".tms." timeused=".timeused." timeleft=".timeleft)
    endif
   endif
@@ -679,20 +709,23 @@ fun! s:MFSyntax()
   syn match MinefieldSpace	" "
   syn match MinefieldBomb	'[*X]'
   syn region MinefieldText    matchgroup=MinefieldBg start="\s\+\zeTime"		end="$"
-  syn region MinefieldTime    start="\s\+\zeTime Used"		end="$"
+  syn region MinefieldTime    start="\s\+\zeTime [Uu]sed"						end="$"
+  syn region MinefieldTime    start="\s\+\zeTime left"						    end="$"
+  syn region MinefieldTime    start="\s\+\zeNearbyFlags"						end="$"
+  syn region MinefieldTime    start="\s\+\zeNearbyFlags"						end="$"
   syn region MinefieldText    matchgroup=MinefieldBg start="\s\+\zeBombs"		end="$"
   syn region MinefieldText    matchgroup=MinefieldBg start="\s\+\zeFlags"		end="$"
   syn region MinefieldText    matchgroup=MinefieldBg start="\s\+\zeBOOM"		end="$"
   syn region MinefieldText    matchgroup=MinefieldBg start="\s\+\zetotal"		end="$"
-  syn region MinefieldText    matchgroup=MinefieldBg start="\s\+\zestreak"	end="$"
-  syn region MinefieldText    matchgroup=MinefieldBg start="\s\+\zelongest"	end="$"
-  syn region MinefieldText    matchgroup=MinefieldBg start="\s\+\zecurrent"	end="$"
+  syn region MinefieldText    matchgroup=MinefieldBg start="\s\+\zestreak"		end="$"
+  syn region MinefieldText    matchgroup=MinefieldBg start="\s\+\zelongest"		end="$"
+  syn region MinefieldText    matchgroup=MinefieldBg start="\s\+\zecurrent"		end="$"
   syn region MinefieldText    matchgroup=MinefieldBg start="\s\+\zebest"		end="$"
   syn region MinefieldMinnie  matchgroup=MinefieldBg start="\s\+\ze[-,/\\)o|]"	end="$" contains=MinefieldWinner keepend
   syn region MinefieldWinner  matchgroup=MinefieldBg start="\s\+\ze\(YOU\|WON\|!!!\)" end="$" keepend
   syn region MinefieldTitle	  matchgroup=MinefieldBg start="\s\+\zeM I N E S\>"	end="$"
   syn region MinefieldTitle	  matchgroup=MinefieldBg start="\s\+\zeby Charles"	end="$"
-  syn region MinefieldFlagCnt matchgroup=MinefieldBg start="\s\+\zeFlags Used: " end="$"
+  syn region MinefieldFlagCnt matchgroup=MinefieldBg start="\s\+\zeFlags Used : " end="$"
   if &bg == "dark"
    hi Minefield0		 ctermfg=black   guifg=black    ctermbg=black   guibg=black    term=NONE cterm=NONE gui=NONE
    hi Minefield1		 ctermfg=green   guifg=green    ctermbg=black   guibg=black    term=NONE cterm=NONE gui=NONE
@@ -758,7 +791,7 @@ endfun
 " Mines#DisplayMines: {{{2
 "    Displays a Minefield and sets up Minefield mappings
 fun! Mines#DisplayMines(init)
-"  "  call Dfunc("Mines#DisplayMines(init=".a:init.")")
+"  call Dfunc("Mines#DisplayMines(init=".a:init.")")
 
   " Settings
   set ts=1    " set tabstop to 1
@@ -810,14 +843,14 @@ fun! Mines#DisplayMines(init)
   call s:MFSyntax()
   nnoremap <silent> <leftmouse>  <leftmouse>:<c-u>call <SID>DrawMinefield()<CR>
   nnoremap <silent> <rightmouse> <leftmouse>:<c-u>call <SID>DrawMineflag()<CR>
-  nmap <silent> x :silent call <SID>DrawMinefield()<CR>
-  nmap <silent> q :silent call <SID>StopMines(0)<CR>
-  nmap <silent> s :silent call <SID>StopMines(1)<CR>
-  nmap <silent> f :silent call <SID>DrawMineflag()<CR>
-  nmap <silent> C :set lz<CR>:call Mines#SaveStatistics(0)<CR>:set nolz<CR>
-  nmap <silent> E :set lz<CR>:call Mines#EasyMines()<CR>:set nolz<CR>
-  nmap <silent> M :set lz<CR>:call Mines#MedMines()<CR>:set nolz<CR>
-  nmap <silent> H :set lz<CR>:call Mines#HardMines()<CR>:set nolz<CR>
+  nnoremap <silent> x :sil! call <SID>DrawMinefield()<CR>
+  nnoremap <silent> q :sil! call <SID>StopMines(0)<CR>
+  nnoremap <silent> s :sil! call <SID>StopMines(1)<CR>
+  nnoremap <silent> f :sil! call <SID>DrawMineflag()<CR>
+  nnoremap <silent> C :set lz<CR>:call Mines#SaveStatistics(0)<CR>:set nolz<CR>
+  nnoremap <silent> E :set lz<CR>:call Mines#EasyMines()<CR>:set nolz<CR>
+  nnoremap <silent> M :set lz<CR>:call Mines#MedMines()<CR>:set nolz<CR>
+  nnoremap <silent> H :set lz<CR>:call Mines#HardMines()<CR>:set nolz<CR>
 
   call s:ToggleMineTimer(g:mines_timer)
 "  call Dret("Mines#DisplayMines")
@@ -855,6 +888,7 @@ fun! s:StopMines(suspend)
    endif
 
 "   call Decho("restoring options")
+   let &l:cul      = s:keep_cul
    let &l:et       = s:keep_et
    let &l:fo       = s:keep_fo
    let &l:gdefault = s:keep_gdefault
@@ -892,7 +926,7 @@ endfun
 "    Save session into given savefile
 fun! SaveSession(savefile)
 "  call Dfunc("SaveSession(savefile<".a:savefile.">)")
-  silent! windo w
+  sil! noautocmd windo w
 
   " Save any pre-existing maps that conflict with <Mines.vim>'s maps
   " (uses call RestoreUserMaps("Mines") to restore user maps in s:StopMines() )
@@ -956,23 +990,55 @@ fun! s:CheckIfFlagged()
 endfun
 
 " ---------------------------------------------------------------------
-" FlagCounter: show count of flags{{{2
+" FlagCounter: show count of flags used, time used, and qty of nearby flags during the course of the game {{{2
+"DechoTabOn
 fun! s:FlagCounter()
 "  call Dfunc("FlagCounter()")
   let vekeep= &ve
   setlocal ve=all
+  let curpos = getpos(".")
 
-  let curpos    = getpos(".")
   keepj call cursor(5,s:MFcols + 3)
-  exe "keepj norm! DA".(printf("    Flags Used: %d",s:flagsused))
+  exe "keepj norm! DA".(printf("    Flags Used : %d",s:flagsused))
+
   keepj call cursor(6,s:MFcols + 3)
   let s:timelapse= localtime() - s:timestart - s:timesuspended
-  exe "keepj norm! DA    Time Used : ".s:timelapse."sec"
+  exe "keepj norm! DA    Time Used  : ".s:timelapse."sec"
+
+  keepj call setpos(".",curpos)
+  let nearbyflags= s:NearbyFlags()
+  keepj call cursor(7,s:MFcols + 3)
+  exe "keepj norm! DA".(printf("    NearbyFlags: %d",nearbyflags))
+
   keepj call setpos(".",curpos)
   set nomod
-
   let &ve= vekeep
 "  call Dret("FlagCounter")
+endfun
+
+" ---------------------------------------------------------------------
+" s:NearbyFlags: counts how many squares have been marked with flags in vicinity of cursor {{{2
+fun! s:NearbyFlags()
+"  call Dfunc("s:NearbyFlags()")
+
+  keepj norm! hkv2ly
+  let cnt = strpart(@@,0,1) == 'f'
+  let cnt = cnt + (strpart(@@,1,1) == 'f')
+  let cnt = cnt + (strpart(@@,2,1) == 'f')
+"  call Decho("upline  <".@@."> cnt=".cnt)
+  keepj norm! jv2ly
+  let cnt = cnt + (strpart(@@,0,1) == 'f')
+  let cnt = cnt + (strpart(@@,1,1) == 'f')
+  let cnt = cnt + (strpart(@@,2,1) == 'f')
+"  call Decho("curline <".@@."> cnt=".cnt)
+  keepj norm! jv2lykl
+  let cnt = cnt + (strpart(@@,0,1) == 'f')
+  let cnt = cnt + (strpart(@@,1,1) == 'f')
+  let cnt = cnt + (strpart(@@,2,1) == 'f')
+"  call Decho("downline<".@@."> cnt=".cnt)
+
+"  call Dret("s:NearbyFlags ".cnt)
+  return cnt
 endfun
 
 " ---------------------------------------------------------------------
@@ -1004,6 +1070,11 @@ endfun
 
 " ---------------------------------------------------------------------
 "  MF_FillLeft: {{{2
+"   Starting at pos'n frow,fcol, and going left:
+"     while the MF array has "0"s, change the display to " "s
+"                                  and change the MF array to "z"s
+"           display the left-side boundary and exit
+"   Return the left-side boundary column
 fun! s:MF_FillLeft(frow,fcol)
 "  call Dfunc("MF_FillLeft(frow=".a:frow.",fcol=".a:fcol.")")
 
@@ -1040,6 +1111,11 @@ endfun
 
 " ---------------------------------------------------------------------
 "  MF_FillRight: {{{2
+"   Starting at pos'n frow,fcol, and going right:
+"     while the MF array has "0"s, change the display to " "s
+"                                  and change the MF array to "z"s
+"           display the right-side boundary and exit
+"   Return the right-side boundary column
 fun! s:MF_FillRight(frow,fcol)
 "  call Dfunc("MF_FillRight(frow=".a:frow.",fcol=".a:fcol.")")
 
@@ -1076,6 +1152,13 @@ endfun
 
 " ---------------------------------------------------------------------
 "  MF_FillRun: {{{2
+"    Starting at frow,fcolL through frow,fcolR
+"      Every "0" on the MF
+"        has a " " displayed
+"        MF entry changed to "z"
+"        floods
+"      Else if a non-"z", then the MF entry is displayed
+"      Else continues the row-wise scan
 fun! s:MF_FillRun(frow,fcolL,fcolR)
 "  call Dfunc("MF_FillRun(frow=".a:frow.",fcol[".a:fcolL.",".a:fcolR."])")
 
@@ -1112,7 +1195,7 @@ endfun
 " ---------------------------------------------------------------------
 " MF_Posn: {{{2
 "    Put cursor into given position on screen
-"       srow,scol: -s-creen    row and column
+"       srow,scol : screen row and column
 "      Returns  1 : failed sanity check
 "               0 : otherwise
 fun! s:MF_Posn(frow,fcol)
@@ -1246,9 +1329,9 @@ fun! s:MF_Happy()
 endfun
 
 " ---------------------------------------------------------------------
-" Winners: checks top winners in the $HOME directory {{{2
+" s:Winners: checks top winners in the $HOME directory {{{2
 fun! s:Winners(winner)
-"  call Dfunc("Winners(winner=".a:winner.")")
+"  call Dfunc("s:Winners(winner=".a:winner.")")
 
   if $HOME == ""
 "   call Dret("Winners : no home directory")
@@ -1304,7 +1387,7 @@ fun! s:Winners(winner)
    endif
   endif
 
-"  call Dret("Winners")
+"  call Dret("s:Winners")
 endfun
 
 " ---------------------------------------------------------------------
@@ -1358,15 +1441,15 @@ endfun
 
 " ---------------------------------------------------------------------
 " Mines#SaveStatistics: {{{2
-fun! Mines#SaveStatistics(mode)
-"  call Dfunc("Mines#SaveStatistics(mode=".a:mode.")")
+fun! Mines#SaveStatistics(init)
+  "  call Dfunc("Mines#SaveStatistics(init=".a:init.")")
 
   if $HOME == ""
 "   call Dret("Mines#SaveStatistics : no $HOME")
    return
   endif
 
-  if a:mode == 0
+  if a:init == 0
    let g:mines_wincntE        = 0
    let g:mines_curwinstreakE  = 0
    let g:mines_curlosestreakE = 0

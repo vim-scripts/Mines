@@ -1,8 +1,8 @@
-*Mines.txt*	The Mines Game 				Mar 08, 2011
+*Mines.txt*	The Mines Game 				Nov 28, 2012
 
-Author:  Charles E. Campbell, Jr.  <NdrOchip@ScampbellPfamily.AbizM>
+Author:  Charles E. Campbell  <NdrOchip@ScampbellPfamily.AbizM>
 	  (remove NOSPAM from the email address first)
-Copyright: (c) 2004-2010 by Charles E. Campbell, Jr.	*mines-copyright*
+Copyright: (c) 2004-2012 by Charles E. Campbell		*mines-copyright*
            The VIM LICENSE applies to Mines.vim and Mines.txt
            (see |copyright|) except use "Mines" instead of "Vim"
 	   No warranty, express or implied.  Use At-Your-Own-Risk.
@@ -14,7 +14,7 @@ Mines is a Vim plugin, but you may source it in on demand if you wish.
 You'll need <Mines.vim> and <Rndm.vim> - the latter file is available
 as "Rndm" at the following website:
 
-    http://mysite.verizon.net/astronaut/vim/index.html#VimFuncs
+    http://www.drchip.org/astronaut/vim/index.html#VimFuncs
 
 
 STARTING
@@ -25,6 +25,10 @@ STARTING
         \mfm : play a  medium-difficulty mines game
         \mfh : play a  high-difficulty mines game
         \mfr : restore a game
+
+The Mines plugin has been set up so that the upper left hand corner will
+always be a safe (ie. no mine) location.  This feature prevents a lot of
+false starts.
 
 Note that using the \mf_ maps will save the files showing in all windows and
 save your session.  Although I've used the backslash in the maps as shown here,
@@ -127,6 +131,10 @@ close your eyes!
 =============================================================================
 2. History:						*mines-history* {{{1
 
+   19 : 05/10/11   * "NearbyFlags" field implemented
+   	11/02/12   * protected a |:windo| call by preceding it with
+		     |:noautocmd|
+	11/28/12   * Changed nmaps to nnoremaps
    18 : 04/27/10   * the "norm" associated with flipping a flagged square back
 		     to normal has been changed to "norm!".  No other plain
 		     "norm"s are in Mines.vim.

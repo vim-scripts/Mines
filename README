@@ -2,7 +2,7 @@ This is a mirror of http://www.vim.org/scripts/script.php?script_id=551
 
 Mines implements the popular game of Mines using Vim, retaining your best scores for each of three levels: Easy, Medium, and Hard.  Mines includes cecutil.vim and Rndm.vim (for screen restoration and for pseudo-random number generation).  The latest developments in Mines.vim will always be available at
 
-    http://mysite.verizon.net/astronaut/vim/index.html#MINES
+    http://www.drchip.org/astronaut/vim/index.html#MINES
 
     Games:
         \mfe : play an easy mines game
